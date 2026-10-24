@@ -1,0 +1,8 @@
+{
+  "name": "response-config",
+  "owner": { "name": "Paul Bennet Joshua" },
+  "metadata": { "description": "Minimal, structured, level-controlled agent replies" },
+  "plugins": [
+    { "name": "response-config", "source": "./", "description": "Skill, hooks and output style for minimal, structured, level-controlled replies" }
+  ]
+}

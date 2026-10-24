@@ -1,0 +1,6 @@
+interface:
+  display_name: "Response Config"
+  short_description: "Minimal, structured replies with numbered items and an English level"
+  default_prompt: "Use $response-config to show my current reply settings."
+policy:
+  allow_implicit_invocation: true

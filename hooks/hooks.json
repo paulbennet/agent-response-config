@@ -1,0 +1,27 @@
+{
+  "description": "response-config: rules at session start and on each prompt, item ledger on stop",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event session-start", "timeout": 10 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event prompt", "timeout": 10 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event stop", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

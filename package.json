@@ -1,0 +1,13 @@
+{
+  "name": "response-config",
+  "version": "0.1.0",
+  "description": "Agent skill + hooks: minimal, structured, level-controlled responses for Claude Code, Codex and GitHub Copilot",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "validate": "claude plugin validate . --strict"
+  }
+}

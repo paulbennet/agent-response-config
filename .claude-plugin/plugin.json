@@ -1,0 +1,23 @@
+{
+  "name": "response-config",
+  "version": "0.1.0",
+  "description": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items. Ships the skill, opt-out hooks and an output style.",
+  "author": {
+    "name": "Paul Bennet Joshua"
+  },
+  "repository": "https://github.com/paulbennet/agent-response-config",
+  "license": "MIT",
+  "keywords": [
+    "concise",
+    "structured",
+    "readability",
+    "cefr",
+    "output-style",
+    "hooks"
+  ],
+  "skills": [
+    "./skills/"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "outputStyles": "./output-styles/"
+}

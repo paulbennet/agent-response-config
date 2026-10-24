@@ -1,0 +1,8 @@
+{
+  "name": "response-config-mod",
+  "version": "0.1.0",
+  "description": "Interactive setup for response-config: config pane, open-items pane, status band and a first-run wizard.",
+  "author": { "name": "Paul Bennet Joshua" },
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}

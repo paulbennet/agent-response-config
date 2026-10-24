@@ -1,0 +1,6 @@
+node_modules/
+.claude-plugin/types/
+mods/*/.claude-plugin/types/
+*.log
+.DS_Store
+.response-config.local.json

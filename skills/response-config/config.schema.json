@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "response-config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "enabled": { "type": "boolean" },
+    "minimal": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "on": { "type": "boolean" },
+        "level": { "enum": ["low", "medium", "high", "extreme"] },
+        "maxWords": { "type": "integer", "minimum": 10, "maximum": 1000 },
+        "preserve": {
+          "type": "array", "uniqueItems": true,
+          "items": { "enum": ["code", "commands", "tables", "errors", "paths", "diffs"] }
+        }
+      }
+    },
+    "structured": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "on": { "type": "boolean" },
+        "sections": {
+          "type": "array", "uniqueItems": true,
+          "items": { "enum": ["actions", "suggestions", "questions", "decisions"] }
+        },
+        "showEmptySections": { "type": "boolean" },
+        "replyHint": { "type": "boolean" }
+      }
+    },
+    "language": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "on": { "type": "boolean" },
+        "cefr": { "enum": ["A1", "A2", "B1", "B2", "C1", "C2", null] },
+        "readability": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object", "additionalProperties": false,
+              "required": ["standard", "target"],
+              "properties": {
+                "standard": { "enum": ["flesch-reading-ease", "flesch-kincaid", "gunning-fog", "smog", "coleman-liau", "dale-chall"] },
+                "target": { "type": "number" }
+              }
+            }
+          ]
+        },
+        "vocabulary": { "enum": ["basic-english", "globish", "ste", "oxford-3000", "oxford-5000", "ngsl", "awl", null] },
+        "plainLanguage": { "type": "boolean" }
+      }
+    },
+    "hooks": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "sessionStart": { "type": "boolean" },
+        "eachPrompt": { "type": "boolean" },
+        "ledger": { "type": "boolean" }
+      }
+    },
+    "overrides": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "inlineTags": { "type": "boolean" } }
+    },
+    "claude": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "outputStyle": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "manage": { "type": "boolean" },
+            "scope": { "enum": ["user", "project"] },
+            "activate": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}
