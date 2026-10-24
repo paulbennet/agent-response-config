@@ -10,7 +10,7 @@ Fixes from [docs/review-0.1.0.md](docs/review-0.1.0.md):
 - Rules reach the model even when the session-start hook did not run.
 - Stricter item and reply parsing; reused IDs are renumbered; the agent can close items.
 - Tags no longer alter the rest of the prompt.
-- CI on Ubuntu and Windows.
+- `npm test` checks that the mod engine copy is in sync.
 
 ## 0.1.0
 

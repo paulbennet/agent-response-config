@@ -132,7 +132,7 @@ node tools/sync-mod.mjs           # copy skill scripts into the mod after editin
 node tools/build-output-style.mjs # regenerate output-styles/response-config.md
 ```
 
-`npm test` runs in CI on Ubuntu and Windows. The `claude` commands need a Claude Code build that knows `plugin test` and mods; older builds (2.1.70 was checked) reject them.
+The `claude` commands need a Claude Code build that knows `plugin test` and mods; older builds (2.1.70 was checked) reject them.
 
 The Claude plugin's root is the repository root, so an installed copy also carries `tests/`, `tools/`, `docs/` and `mods/`. They are inert there.
 

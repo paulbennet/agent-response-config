@@ -160,7 +160,7 @@ All findings were addressed. Regression tests reference the finding ID in their 
 | L1 | fixed | `pluginOptionsLayer` removed; deviations listed in `docs/STATUS.md`. |
 | L2 | fixed | Line endings normalised before hashing. |
 | L3 | documented | Unverified paths and shapes labelled in README, setup output and STATUS.md. |
-| L4 | fixed | `npm test` runs the sync check; GitHub Actions on Ubuntu and Windows. |
+| L4 | fixed | `npm test` runs the sync check. No CI workflow, by choice. |
 | L5 | fixed | `hooks/register.test.tsx`, 4 tests passing on Claude Code 2.1.310. Live load still pending. |
 | L6 | fixed | Project config search stops at the home directory. |
 | L7 | fixed | README note; `config.mjs --ledger path|clear`. |
