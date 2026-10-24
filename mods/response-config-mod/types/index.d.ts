@@ -13,7 +13,8 @@ export type ModLedger = {
   sessionId: string
   counters: { A: number; S: number; Q: number; D: number }
   items: ModItem[]
-  session: { overrides: Record<string, unknown> }
+  renumbered: { from: string; to: string }[]
+  session: { overrides: Record<string, unknown>; rulesSentAt: number }
   turn: number
   updatedAt: number
 }

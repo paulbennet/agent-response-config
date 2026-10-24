@@ -1,4 +1,4 @@
-// Config resolution: defaults < plugin options < user file < project file.
+// Config resolution: defaults < user file < project file.
 // Session overrides (ledger) and per-turn tags are applied by hint.mjs.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -29,14 +29,44 @@ export function readJson(file) {
   }
 }
 
+// Like readJson, but tells "missing" apart from "exists and does not parse".
+// Writers must refuse to touch a file whose state is 'invalid', or they would wipe it.
+export function readJsonStrict(file) {
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { state: 'missing', data: undefined };
+  }
+  if (!text.trim()) return { state: 'ok', data: {} };
+  try {
+    return { state: 'ok', data: JSON.parse(text) };
+  } catch (e) {
+    return { state: 'invalid', data: undefined, error: e.message };
+  }
+}
+
+// Reads a JSON object file for editing. Throws instead of returning {} for a broken file.
+export function readJsonForEdit(file) {
+  const r = readJsonStrict(file);
+  if (r.state === 'invalid') {
+    throw new Error(`${file} is not valid JSON (${r.error}). Fix it by hand; nothing was changed.`);
+  }
+  if (r.state === 'ok' && !isObj(r.data)) throw new Error(`${file} does not hold a JSON object; nothing was changed.`);
+  return r.data ?? {};
+}
+
 export function loadDefaults() {
   return readJson(path.join(SKILL_DIR, 'config.default.json')) ?? {};
 }
 
-// Walk up from cwd looking for the project file; stop at a .git root or filesystem root.
-export function findProjectConfig(cwd) {
+// Walk up from cwd looking for the project file; stop at a .git root, the home directory
+// (exclusive: a file there is not a project file) or the filesystem root.
+export function findProjectConfig(cwd, home = os.homedir()) {
   let dir = path.resolve(cwd || process.cwd());
+  const stop = path.resolve(home);
   for (;;) {
+    if (dir === stop) return undefined;
     const candidate = path.join(dir, PROJECT_FILE);
     if (fs.existsSync(candidate)) return candidate;
     if (fs.existsSync(path.join(dir, '.git'))) return undefined;
@@ -98,31 +128,20 @@ export function validate(cfg) {
   return errors;
 }
 
-// CLAUDE_PLUGIN_OPTION_* values (plugin userConfig) form the lowest non-default layer.
-export function pluginOptionsLayer(env = process.env) {
-  const layer = {};
-  const lvl = env.CLAUDE_PLUGIN_OPTION_MINIMAL_LEVEL;
-  if (lvl === 'off') layer.minimal = { on: false };
-  else if (lvl) layer.minimal = { on: true, level: lvl };
-  const cefr = env.CLAUDE_PLUGIN_OPTION_CEFR;
-  if (cefr === 'off') layer.language = { on: false };
-  else if (cefr) layer.language = { on: true, cefr };
-  const st = env.CLAUDE_PLUGIN_OPTION_STRUCTURED;
-  if (st === 'true' || st === 'false') layer.structured = { on: st === 'true' };
-  return layer;
-}
-
 export function loadConfig({ cwd, env = process.env } = {}) {
   const sources = ['defaults'];
   const problems = [];
   let cfg = loadDefaults();
-  const layers = [
-    ['plugin-options', pluginOptionsLayer(env)],
-    ['user', readJson(userConfigPath(env))],
-  ];
-  const projectPath = findProjectConfig(cwd);
-  if (projectPath) layers.push([`project:${projectPath}`, readJson(projectPath)]);
-  for (const [name, layer] of layers) {
+  const layers = [['user', userConfigPath(env)]];
+  const projectPath = findProjectConfig(cwd, env.RC_HOME_DIR || os.homedir());
+  if (projectPath) layers.push([`project:${projectPath}`, projectPath]);
+  for (const [name, file] of layers) {
+    const r = readJsonStrict(file);
+    if (r.state === 'invalid') {
+      problems.push(`${name}: not valid JSON (${r.error}); layer ignored`);
+      continue;
+    }
+    const layer = r.data;
     if (!layer || (isObj(layer) && Object.keys(layer).length === 0)) continue;
     const errs = validate(layer);
     if (errs.length) {

@@ -22,5 +22,6 @@ STRUCTURE
 - Omit sections that are empty.
 - Anything the user must notice (risk, caveat, blocked step, follow-up) goes in an item, not in the summary prose.
 - Questions need a concrete answer form, for example "(yes/no)". Decisions list lettered options: "(a) ... (b) ...".
+- When you finish or settle an item, close it with a line "- A2 done" (or answered/skipped), or "Resolved: A2, Q1".
 - The user may reply by ID: "A2" or "do A2", "done A1", "skip S1", "Q1: yes", "D3: b". Treat these as answers to those items.
 TAGS: if the user message has !verbose (full detail this turn), !plain (plain language), !level=<A1-C2>, !words=<n>, or !off (ignore these rules this turn), apply it for that turn only.

@@ -104,6 +104,7 @@ export function renderRules(cfg) {
       '- Anything the user must notice (risk, caveat, blocked step, follow-up) goes in an item, not in the summary prose.',
     );
     lines.push('- Questions need a concrete answer form, for example "(yes/no)". Decisions list lettered options: "(a) ... (b) ...".');
+    lines.push('- When you finish or settle an item, close it with a line "- A2 done" (or answered/skipped), or "Resolved: A2, Q1".');
     if (cfg.structured.replyHint) {
       lines.push(
         '- The user may reply by ID: "A2" or "do A2", "done A1", "skip S1", "Q1: yes", "D3: b". Treat these as answers to those items.',
@@ -146,24 +147,47 @@ export function renderSessionHint(cfg, ledger, { notes = [] } = {}) {
   return cap(out.join('\n'));
 }
 
-// <= 8 lines. resolved: result of applyReplies. tags: parsed one-turn tags.
-export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, problems = [] } = {}) {
+// One line that restates the rules, for prompts after the full rules were delivered.
+export function renderDigest(cfg) {
+  if (!cfg.enabled) return '';
+  const parts = [];
+  if (cfg.minimal.on) parts.push(`brevity ${cfg.minimal.level}, at most ${cfg.minimal.maxWords} prose words, artefacts verbatim, errors in full`);
+  if (cfg.structured.on) parts.push('summary then "- A1/S1/Q1/D1" items, IDs never reused');
+  if (cfg.language.on) {
+    const l = cfg.language;
+    const bits = [l.cefr, l.readability && `${l.readability.standard} ${l.readability.target}`, l.vocabulary, l.plainLanguage && 'plain language'];
+    parts.push(`language: ${bits.filter(Boolean).join(', ')}`);
+  }
+  return parts.length ? `Rules: ${parts.join('; ')}.` : '';
+}
+
+const VERB = { do: 'started', done: 'finished', skip: 'skipped' };
+
+// Short per-prompt hint. withRules: also include the full rules (session hint not delivered).
+export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, problems = [], renumbered = [], withRules = false } = {}) {
   if (!cfg.enabled) {
     return tags.off ? '[response-config] off for this turn (!off). Answer normally.' : '';
   }
-  const lines = [`[response-config] mode: ${modeSummary(cfg)}${cfg.minimal.on ? `, max ${cfg.minimal.maxWords} prose words` : ''}.`];
+  const lines = [`[response-config] mode: ${modeSummary(cfg)}.`];
+  if (withRules) lines.push(renderRules(cfg));
+  else {
+    const digest = renderDigest(cfg);
+    if (digest) lines.push(digest);
+  }
   const tagNames = Object.entries(tags).map(([k, v]) => (v === true ? `!${k}` : `!${k}=${v}`));
   if (tagNames.length) lines.push(`Tags this turn only: ${tagNames.join(' ')}.`);
   if (cfg.structured.on && ledger) {
-    for (const r of resolved.slice(0, 4)) {
-      if (r.unknown) lines.push(`User referenced ${r.id}, which is not in the ledger; ask what they mean.`);
-      else if (r.kind === 'answer') lines.push(`User answered ${r.id}: "${r.value}" (${r.text}).`);
-      else lines.push(`User ${r.kind} ${r.id}: ${r.text}.`);
+    for (const r of renumbered.slice(0, 4)) lines.push(`Your last reply reused ${r.from}; that item is now ${r.to}. Use ${r.to} from now on.`);
+    for (const r of resolved.slice(0, 6)) {
+      if (r.unknown) lines.push(`User referenced ${r.id}, which is not tracked; ask which item they mean.`);
+      else if (r.kind === 'answer') lines.push(`User answered ${r.id} (${r.text}): "${r.value}".`);
+      else if (r.kind === 'ref') lines.push(`User asked about ${r.id} (${r.text}): "${r.value}?"`);
+      else lines.push(`User ${VERB[r.kind]} ${r.id}: ${r.text}.`);
     }
     const open = openItems(ledger);
     if (open.length) lines.push(`Open: ${open.map((i) => i.id).join(' ')}`);
     lines.push(`Next IDs: ${nextIds(ledger)}`);
   }
   for (const p of problems.slice(0, 1)) lines.push(`Config problem: ${p}`);
-  return cap(lines.slice(0, 8).join('\n'));
+  return cap(lines.join('\n'));
 }

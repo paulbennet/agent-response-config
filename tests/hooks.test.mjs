@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { run } from '../skills/response-config/scripts/hook.mjs';
 import { loadConfig, validate } from '../skills/response-config/scripts/lib/config.mjs';
 import { loadLedger, markModActive } from '../skills/response-config/scripts/lib/ledger.mjs';
@@ -33,8 +33,8 @@ test('stop registers items, prompt resolves replies and advances IDs', () => {
   const l = loadLedger('claude', 's', e);
   assert.deepEqual(l.counters, { A: 1, S: 3, Q: 1, D: 0 });
   const out = JSON.parse(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'Q1: yes, done A1' }, env: e })).hookSpecificOutput.additionalContext;
-  assert.match(out, /User answered Q1: "yes"/);
-  assert.match(out, /User done A1/);
+  assert.ok(out.includes('User answered Q1 (Keep flag? (yes/no)): "yes"'), out);
+  assert.match(out, /User finished A1/);
   assert.match(out, /Open: S3/);
   assert.match(out, /Next IDs: A2 S4 Q2 D1/);
 });
@@ -59,7 +59,7 @@ test('inline tags change the hint for one turn only', () => {
   const e = env();
   const hint = JSON.parse(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'go !verbose !level=B1' }, env: e })).hookSpecificOutput.additionalContext;
   assert.match(hint, /Tags this turn only: !verbose !level=B1/);
-  assert.match(hint, /B1/);
+  assert.match(hint, /CEFR B1/);
   assert.doesNotMatch(ctx(e), /Tags this turn/);
 });
 
@@ -104,4 +104,77 @@ test('CLI entry never fails, even on garbage stdin', () => {
 test('lastAssistantText finds assistant text in a JSONL transcript tail', () => {
   const jsonl = ['{"role":"user","content":"q"}', '{"role":"assistant","content":[{"type":"text","text":"- A1 go"}]}', '{"type":"tool","x":1}'].join('\n');
   assert.equal(lastAssistantText(jsonl), '- A1 go');
+});
+
+test('prompt hint carries the full rules until a session hint was delivered (review H4)', () => {
+  const e = env();
+  assert.match(ctx(e), /BREVITY/);
+  const second = ctx(e);
+  assert.doesNotMatch(second, /BREVITY/);
+  assert.match(second, /Rules: brevity high/);
+  const e2 = env();
+  run({ agent: 'claude', event: 'session-start', input: { session_id: 's', cwd: e2.dir, source: 'startup' }, env: e2 });
+  assert.doesNotMatch(ctx(e2), /BREVITY/);
+});
+
+test('a reused ID is renumbered and announced on the next prompt (review M4)', () => {
+  const e = env();
+  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
+  stop('- A1 Run tests');
+  run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'done A1' }, env: e });
+  stop('- A1 Deploy to staging');
+  const l = loadLedger('claude', 's', e);
+  assert.deepEqual(l.items.map((i) => `${i.id}:${i.status}`), ['A1:done', 'A2:open']);
+  assert.match(ctx(e), /reused A1; that item is now A2/);
+});
+
+test('the assistant can close items itself (review M5)', () => {
+  const e = env();
+  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
+  stop('- A1 Run tests\n- S1 Cache it');
+  stop('Tests pass.\nResolved: A1');
+  const l = loadLedger('claude', 's', e);
+  assert.deepEqual(l.items.map((i) => `${i.id}:${i.status}`), ['A1:done', 'S1:open']);
+});
+
+test('do marks actions and suggestions in progress alike', () => {
+  const e = env();
+  run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: '- A1 x\n- S1 y' }, env: e });
+  run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'A1, S1' }, env: e });
+  assert.deepEqual(loadLedger('claude', 's', e).items.map((i) => i.status), ['in-progress', 'in-progress']);
+});
+
+test('a broken user config is reported, not silently ignored', () => {
+  const e = env();
+  fs.mkdirSync(e.RC_CONFIG_DIR, { recursive: true });
+  fs.writeFileSync(path.join(e.RC_CONFIG_DIR, 'config.json'), '{ "minimal": { "level": "low" }, }');
+  const { problems } = loadConfig({ cwd: e.dir, env: e });
+  assert.match(problems[0], /not valid JSON/);
+});
+
+test('project config search stops at the home directory (review L6)', () => {
+  const e = env();
+  const home = path.join(e.dir, 'home');
+  fs.mkdirSync(path.join(home, 'work', 'proj'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.response-config.json'), JSON.stringify({ minimal: { level: 'low' } }));
+  const { config } = loadConfig({ cwd: path.join(home, 'work', 'proj'), env: { ...e, RC_HOME_DIR: home } });
+  assert.equal(config.minimal.level, 'high');
+});
+
+test('session ids with a .jsonl suffix match the mod marker (review M8)', () => {
+  const e = env();
+  markModActive('abc.jsonl', e);
+  assert.equal(run({ agent: 'claude', event: 'prompt', input: { session_id: 'abc', cwd: e.dir, prompt: 'hi' }, env: e }), '');
+});
+
+test('importing hook.mjs without argv[1] does not crash (review M6)', () => {
+  const url = pathToFileURL(HOOK).href;
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(url)}); console.log('ok')`], { encoding: 'utf8' });
+  assert.equal(r.stdout.trim(), 'ok', r.stderr);
+});
+
+test('codex stop still prints {} when the hook throws', () => {
+  const r = spawnSync(process.execPath, [HOOK, '--agent', 'codex', '--event', 'stop'], { input: '{"session_id":"s","cwd":42}', encoding: 'utf8', env: env() });
+  assert.equal(r.stdout.trim(), '{}');
+  assert.equal(r.status, 0);
 });

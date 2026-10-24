@@ -73,3 +73,19 @@ test('activate sets outputStyle in settings and reports the previous value', () 
   const saved = JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8'));
   assert.deepEqual(saved, { outputStyle: 'response-config-managed', keep: 1 });
 });
+
+test('a CRLF re-save is not drift (review L2)', () => {
+  const { cfg, opts } = setup();
+  syncStyle(cfg, opts);
+  const file = styleStatus(cfg, opts).file;
+  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+  assert.equal(styleStatus(cfg, opts).state, 'in-sync');
+});
+
+test('activate refuses to rewrite a settings file that does not parse (review H1)', () => {
+  const { cfg, opts, dir } = setup();
+  const broken = '{ "outputStyle": "Concise", }';
+  fs.writeFileSync(path.join(dir, 'settings.json'), broken);
+  assert.throws(() => activateStyle(cfg, opts), /not valid JSON/);
+  assert.equal(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8'), broken);
+});

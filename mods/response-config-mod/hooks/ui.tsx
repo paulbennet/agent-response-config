@@ -1,15 +1,21 @@
 // Status band, config pane and open-items pane.
-import { read, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { On } from 'claude-code'
 
 import { runWizard } from './wizard'
 import {
-  Dollar, cli, configAtom, ledgerAtom, refresh, save, styleAtom, targetAtom,
+  cli, refresh, save,
 } from './engine'
 // @ts-ignore bundled plain-JS modules without declarations
 import { effectiveConfig, modeSummary } from '../engine/lib/hint.mjs'
 // @ts-ignore
 import { openItems } from '../engine/lib/core.mjs'
+
+// The engine reads state statically: each file that reads or writes an atom declares it itself.
+const configAtom = atom({ plugin: 'response-config-mod', key: 'config' } as const, null, { shape: 'config-1' })
+const ledgerAtom = atom({ plugin: 'response-config-mod', key: 'ledger' } as const, null, { shape: 'ledger-1' })
+const styleAtom = atom({ plugin: 'response-config-mod', key: 'style' } as const, 'off')
+const targetAtom = atom({ plugin: 'response-config-mod', key: 'target' } as const, 'user')
 
 export const CONFIG_PANE = 'rc-config'
 export const ITEMS_PANE = 'rc-items'

@@ -1,7 +1,7 @@
 {
   "name": "response-config",
   "version": "0.1.0",
-  "description": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items. Ships the skill, opt-out hooks and an output style.",
+  "description": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items. Ships the skill, an output style, and hooks that are on by default once the plugin is enabled.",
   "author": {
     "name": "Paul Bennet Joshua"
   },
@@ -14,9 +14,6 @@
     "cefr",
     "output-style",
     "hooks"
-  ],
-  "skills": [
-    "./skills/"
   ],
   "hooks": "./hooks/hooks.json",
   "outputStyles": "./output-styles/"

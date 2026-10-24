@@ -1,5 +1,6 @@
 // First-run / on-demand setup wizard built on $.ui.ask dialogs (works on every surface).
-import { Dollar, cli, refresh, save } from './engine'
+import { cli, refresh, save } from './engine'
+import type { Dollar } from './engine'
 
 const LEVELS = ['low', 'medium', 'high', 'extreme']
 const CEFR = ['A1', 'A2', 'B1', 'B2']
@@ -69,6 +70,24 @@ export async function runWizard($: Dollar): Promise<boolean> {
   await refresh($)
   $.ui.toast('All set. /response-config opens the panel any time.')
   return true
+}
+
+// Shown once per session until answered: set up now, later, or never.
+// Two dismissals without an answer count as "never", so it stops interrupting.
+export async function firstRun($: Dollar) {
+  const pick = await ask($, 'response-config is installed. Set up your reply style now?', ['Set up now', 'Later', 'Never ask'], 'Setup')
+  if (pick === 'Never ask') {
+    await $.store.set('wizardDone', true)
+    return
+  }
+  if (pick === undefined) {
+    const dismissed = Number((await $.store.get('wizardDismissed')) ?? 0) + 1
+    await $.store.set('wizardDismissed', dismissed)
+    if (dismissed >= 2) await $.store.set('wizardDone', true)
+    return
+  }
+  if (pick === 'Later') return
+  if (await runWizard($)) await $.store.set('wizardDone', true)
 }
 
 export { LEVELS }

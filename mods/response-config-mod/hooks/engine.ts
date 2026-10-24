@@ -7,12 +7,11 @@ import type { ModConfig, ModLedger } from '../types'
 // @ts-ignore bundled plain-JS module without declarations
 import { emptyLedger } from '../engine/lib/core.mjs'
 
-const REF = 'response-config-mod'
-
-export const configAtom = atom({ plugin: REF, key: 'config' } as const, null, { shape: 'config-1' })
-export const ledgerAtom = atom({ plugin: REF, key: 'ledger' } as const, null, { shape: 'ledger-1' })
-export const styleAtom = atom({ plugin: REF, key: 'style' } as const, 'off')
-export const targetAtom = atom({ plugin: REF, key: 'target' } as const, 'user')
+// The engine reads state statically: each file that reads or writes an atom declares it itself.
+const configAtom = atom({ plugin: 'response-config-mod', key: 'config' } as const, null, { shape: 'config-1' })
+const ledgerAtom = atom({ plugin: 'response-config-mod', key: 'ledger' } as const, null, { shape: 'ledger-1' })
+const styleAtom = atom({ plugin: 'response-config-mod', key: 'style' } as const, 'off')
+const targetAtom = atom({ plugin: 'response-config-mod', key: 'target' } as const, 'user')
 
 export type Dollar = EngineInterface
 

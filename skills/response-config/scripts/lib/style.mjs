@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { readJson, writeJsonAtomic } from './config.mjs';
+import { readJsonForEdit, writeJsonAtomic } from './config.mjs';
 import { renderRules } from './hint.mjs';
 
 export const STYLE_NAME = 'response-config-managed';
@@ -11,7 +11,8 @@ export const STYLE_FILE = `${STYLE_NAME}.md`;
 const VERSION = 'v1';
 const PROV_RE = /<!-- response-config (v\d+) config=([0-9a-f]{16}) body=([0-9a-f]{16}) -->\s*$/;
 
-const sha = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
+// Line endings are normalised so an editor that saves CRLF does not count as an edit.
+const sha = (s) => crypto.createHash('sha256').update(String(s).replace(/\r\n/g, '\n')).digest('hex').slice(0, 16);
 
 // Only the keys that change the rules text feed the config hash.
 export function relevantConfig(cfg) {
@@ -132,7 +133,7 @@ export function removeStyle(cfg, opts = {}) {
 export function activateStyle(cfg, opts = {}) {
   const scope = cfg.claude.outputStyle.scope;
   const file = settingsPath(scope, opts);
-  const data = readJson(file) ?? {};
+  const data = readJsonForEdit(file);
   const previous = data.outputStyle;
   data.outputStyle = STYLE_NAME;
   writeJsonAtomic(file, data);

@@ -21,7 +21,7 @@ Decisions
 - D1 Error format: (a) JSON (b) plain text
 ```
 
-Reply with `Q1: yes, D1: a, done A1, skip S2`. IDs count up per type for the whole session.
+Reply with `Q1: yes, D1: a, done A1, skip S2`. IDs count up per type for the whole session. The agent closes items it finished with `- A1 done` or `Resolved: A1, Q1`.
 
 Every part has an on/off switch. Hooks, a Claude output style and a Claude mod are optional extras.
 
@@ -33,7 +33,7 @@ Pick one.
 |---|---|
 | skills.sh (Claude, Codex, Copilot, many more) | `npx skills add paulbennet/agent-response-config --skill response-config` (add `-a claude-code`, `-a codex` or `-a github-copilot`, and `-g` for user-wide) |
 | GitHub CLI 2.90+ | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` |
-| Claude Code plugin (skill + hooks + output style) | `/plugin install response-config --marketplace paulbennet/agent-response-config` |
+| Claude Code plugin (skill + hooks + output style; hooks are on once the plugin is enabled) | `/plugin install response-config --marketplace paulbennet/agent-response-config` |
 | Claude mod (interactive panes, optional) | `/plugin install response-config-mod --marketplace paulbennet/agent-response-config` |
 | Manual | copy `skills/response-config/` to `.claude/skills/`, `.agents/skills/` (Codex, Copilot) or `~/.copilot/skills/` |
 
@@ -89,10 +89,17 @@ Or ask the agent: "set up response-config hooks for Codex".
 | Agent | Writes | Notes |
 |---|---|---|
 | Claude Code | `~/.claude/settings.json` or `.claude/settings.json` | Not needed if the plugin is installed |
-| Codex | `~/.codex/hooks.json` or `.codex/hooks.json` | Run `/hooks` and trust the 3 hooks, or they do not run |
-| Copilot CLI | `~/.copilot/hooks/response-config.json` or `.github/hooks/response-config.json` | `--vscode` writes the VS Code compatible event names (preview) |
+| Codex | `~/.codex/hooks.json` or `.codex/hooks.json` | Run `/hooks` and trust the 3 hooks, or they do not run. The `hooks.json` wrapper shape is unverified against a live Codex |
+| Copilot CLI | `~/.copilot/hooks/response-config.json` or `.github/hooks/response-config.json` | Per-prompt hints use `userPromptTransformed` |
+| Copilot in VS Code | `.github/hooks/response-config.json` (`--vscode --scope project`) | VS Code compatible event names; VS Code hooks are a preview feature and this path is unverified live |
 
-`--instructions` also adds a short block to `CLAUDE.md`, `AGENTS.md` or `copilot-instructions.md`.
+`--scope project` for Claude writes `.claude/settings.local.json`, which stays on your machine. For Codex and Copilot the project files are meant to be committed, so the skill must be installed in the project (for example with `npx skills add` without `-g`); the hook path is then written relative to the project. Without that the script refuses, unless you pass `--force`.
+
+The script never rewrites a settings file that does not parse: it stops and names the file.
+
+`--instructions` also adds a short block to `CLAUDE.md`, `AGENTS.md` or `copilot-instructions.md`. The user-level Copilot location `~/.copilot/copilot-instructions.md` is not documented by GitHub; prefer `--scope project` there.
+
+The A/S/Q/D ledger is stored per session under the config directory and pruned after 30 days. It holds the item texts the agent wrote. `config.mjs --ledger path` shows where; `config.mjs --ledger clear` deletes it.
 
 Hooks instruct; they cannot rewrite the model's answer. Nothing is blocked or regenerated.
 
@@ -118,11 +125,16 @@ The mod uses an early-access Claude Code API. It bundles a copy of the scripts u
 ## Develop
 
 ```
-npm test                          # node:test suite (no dependencies)
-node tools/sync-mod.mjs --check   # mod engine copy matches the skill scripts
+npm test                          # mod engine copy check + node:test suite (no dependencies)
+npm run test:mod                  # mod tests on the Claude Code engine (needs a recent claude, 2.1.310 tested)
+npm run validate                  # claude plugin validate on the plugin and the mod
+node tools/sync-mod.mjs           # copy skill scripts into the mod after editing them
 node tools/build-output-style.mjs # regenerate output-styles/response-config.md
-claude plugin validate .
 ```
+
+`npm test` runs in CI on Ubuntu and Windows. The `claude` commands need a Claude Code build that knows `plugin test` and mods; older builds (2.1.70 was checked) reject them.
+
+The Claude plugin's root is the repository root, so an installed copy also carries `tests/`, `tools/`, `docs/` and `mods/`. They are inert there.
 
 Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plugin/` + `hooks/` + `output-styles/` (Claude plugin), `mods/response-config-mod/` (mod), `tests/`, `evals/`, `docs/`.
 
@@ -131,6 +143,8 @@ Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plu
 - Adherence depends on the model following instructions. There is no validator or retry.
 - Copilot only supports per-prompt hints through the `userPromptTransformed` hook, and gives the Stop hook a transcript path rather than the final message, so item tracking there is best effort.
 - VS Code Copilot hooks are a preview feature; the `--vscode` event names are unverified against a live install.
+- The Codex `hooks.json` shape is unverified against a live install.
+- Hooks and plugin were not yet run in a live Claude, Codex or Copilot session; see [docs/STATUS.md](docs/STATUS.md).
 - A terminal Claude session reads output style files at startup, so a regenerated style applies from the next session.
 
 ## Licence

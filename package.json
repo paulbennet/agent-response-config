@@ -5,9 +5,12 @@
   "type": "module",
   "license": "MIT",
   "private": true,
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": "node --test \"tests/**/*.test.mjs\"",
-    "validate": "claude plugin validate . --strict"
+    "test": "node tools/sync-mod.mjs --check && node --test \"tests/**/*.test.mjs\"",
+    "validate": "claude plugin validate . && claude plugin validate mods/response-config-mod",
+    "test:mod": "claude plugin test mods/response-config-mod"
   }
 }

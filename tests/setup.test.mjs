@@ -61,3 +61,46 @@ test('instructions block is added once and removed cleanly', () => {
   go('--agent', 'codex', '--instructions', '--uninstall');
   assert.equal(fs.readFileSync(path.join(dir, 'x', 'AGENTS.md'), 'utf8'), '# mine\n');
 });
+
+test('a settings file that does not parse is left untouched (review H1)', () => {
+  const { dir, go } = sandbox();
+  fs.mkdirSync(path.join(dir, 'c'), { recursive: true });
+  const broken = '{"theme":"dark","permissions":{"allow":["Bash(npm:*)"]},}';
+  fs.writeFileSync(path.join(dir, 'c', 'settings.json'), broken);
+  const r = go('--agent', 'claude');
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /not valid JSON/);
+  assert.equal(fs.readFileSync(path.join(dir, 'c', 'settings.json'), 'utf8'), broken);
+});
+
+test('project scope: claude uses settings.local.json; codex and copilot need the skill in the project (review H3)', () => {
+  const { dir, go } = sandbox();
+  assert.equal(go('--agent', 'claude', '--scope', 'project').status, 0);
+  assert.ok(fs.existsSync(path.join(dir, '.claude', 'settings.local.json')));
+  assert.equal(fs.existsSync(path.join(dir, '.claude', 'settings.json')), false);
+  const refused = go('--agent', 'codex', '--scope', 'project');
+  assert.equal(refused.status, 1);
+  assert.match(refused.stdout, /needs the skill inside the project/);
+  assert.equal(fs.existsSync(path.join(dir, '.codex')), false);
+  const skill = path.join(dir, '.agents', 'skills', 'response-config', 'scripts');
+  fs.mkdirSync(skill, { recursive: true });
+  fs.writeFileSync(path.join(skill, 'hook.mjs'), '');
+  assert.equal(go('--agent', 'copilot', '--scope', 'project').status, 0);
+  const f = fs.readFileSync(path.join(dir, '.github', 'hooks', 'response-config.json'), 'utf8');
+  assert.match(f, /node '\.agents\/skills\/response-config\/scripts\/hook\.mjs'/);
+});
+
+test('instructions block contains no machine path (review H3)', () => {
+  const { dir, go } = sandbox();
+  go('--agent', 'claude', '--scope', 'project', '--instructions');
+  const t = fs.readFileSync(path.join(dir, 'CLAUDE.md'), 'utf8');
+  assert.match(t, /response-config:start/);
+  assert.doesNotMatch(t, /[A-Za-z]:\/|\/Users\/|\/home\//);
+});
+
+test('--vscode requires project scope (review M7)', () => {
+  const { go } = sandbox();
+  const r = go('--agent', 'copilot', '--vscode');
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /--scope project/);
+});

@@ -1,8 +1,21 @@
 {
   "name": "response-config",
-  "owner": { "name": "Paul Bennet Joshua" },
-  "metadata": { "description": "Minimal, structured, level-controlled agent replies" },
+  "owner": {
+    "name": "Paul Bennet Joshua"
+  },
+  "metadata": {
+    "description": "Minimal, structured, level-controlled agent replies"
+  },
   "plugins": [
-    { "name": "response-config", "source": "./", "description": "Skill, hooks and output style for minimal, structured, level-controlled replies" }
+    {
+      "name": "response-config",
+      "source": "./",
+      "description": "Skill, hooks and output style for minimal, structured, level-controlled replies"
+    },
+    {
+      "name": "response-config-mod",
+      "source": "./mods/response-config-mod",
+      "description": "Optional Claude Code mod: config pane, open-items pane, status band and setup wizard for response-config"
+    }
   ]
 }

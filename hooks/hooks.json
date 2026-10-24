@@ -3,23 +3,35 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear|compact",
+        "matcher": "startup|resume|clear|compact|fork",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event session-start", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event session-start",
+            "timeout": 10
+          }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event prompt", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event prompt",
+            "timeout": 10
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event stop", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent claude --event stop",
+            "timeout": 10
+          }
         ]
       }
     ]

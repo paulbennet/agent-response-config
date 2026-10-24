@@ -56,7 +56,10 @@ Decisions
 - Omit empty sections unless `structured.showEmptySections` is true.
 - Put anything the user must notice (risk, caveat, blocked step, follow-up) in an item, not in the summary.
 - Questions state the expected answer form. Decisions list lettered options.
-- The user may reply by ID: `A2` or `do A2`, `done A1`, `skip S1`, `Q1: yes`, `D3: b`. Treat each as an instruction or answer about that item. If an ID is unknown, ask which item they mean.
+- Always write items as list lines (`- A1 ...`). Bare `A1 ...` lines only count under an Actions/Suggestions/Questions/Decisions heading.
+- When you finish or settle an item, close it: `- A2 done` (or `answered`, `skipped`), or one line `Resolved: A2, Q1`.
+- The user may reply by ID: `A2` or `do A2`, `done A1`, `skip S1`, `Q1: yes`, `D3: b`. Treat each as an instruction or answer about that item. `Q1: why?` is a question about Q1, not an answer. If an ID is unknown, ask which item they mean.
+- If the hook says an ID you reused was renumbered (for example "A1 is now A5"), use the new ID from then on.
 - Details and edge cases: [references/format.md](references/format.md).
 
 **Language level.** Only when `language.on` is true. Apply every set field:
@@ -95,11 +98,14 @@ node <skill-dir>/scripts/setup.mjs --agent claude|codex|copilot|all --scope user
 node <skill-dir>/scripts/setup.mjs --agent codex --scope user
 ```
 
-Add `--instructions` to also append a short pointer to CLAUDE.md / AGENTS.md / copilot-instructions.md. Add `--uninstall` to remove. Notes to pass on:
+Add `--instructions` to also append a short block to CLAUDE.md / AGENTS.md / copilot-instructions.md. Add `--uninstall` to remove. The script never rewrites a settings file it cannot parse; it stops and names the file. Notes to pass on:
 
+- **Scope project**: Claude hooks go to `.claude/settings.local.json` (personal, not committed). Codex and Copilot project hooks are committed files, so the skill must be installed inside the project (for example `.agents/skills/response-config/`); the script writes a relative path, or refuses.
 - **Codex** does not run hooks until the user reviews and trusts them with `/hooks`.
-- **Copilot** hooks use the CLI event names; `--vscode` writes the VS Code compatible names instead (preview).
+- **Copilot** hooks use the CLI event names; `--vscode --scope project` writes the VS Code compatible names instead (preview).
 - **Claude Code**: if the response-config plugin is installed, it already ships the hooks.
+
+The item ledger lives under the config directory. `node <skill-dir>/scripts/config.mjs --ledger path` prints it; `--ledger clear` deletes all stored ledgers.
 
 ## 5. Claude Code managed output style (optional)
 

@@ -5,13 +5,14 @@
 //   node config.mjs --set minimal.level=medium [--set language.on=true ...] [--project]
 //   node config.mjs --init [--project]
 //   node config.mjs --style status|sync|activate|remove [--force]
+//   node config.mjs --ledger path|clear
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  PROJECT_FILE, deepMerge, getPath, loadConfig, loadDefaults, parseValue, readJson, setPath,
+  PROJECT_FILE, deepMerge, getPath, loadConfig, loadDefaults, parseValue, readJsonForEdit, setPath,
   userConfigPath, validate, writeJsonAtomic,
 } from './lib/config.mjs';
-import { markModActive } from './lib/ledger.mjs';
+import { clearLedgers, markModActive, sessionsDir } from './lib/ledger.mjs';
 import {
   activateStyle, driftNote, removeStyle, styleStatus, syncStyle,
 } from './lib/style.mjs';
@@ -45,6 +46,12 @@ function main() {
     markModActive(one('mod-active'));
     return console.log('marked');
   }
+  if (has('ledger')) {
+    const action = one('ledger');
+    if (action === 'path') return console.log(sessionsDir());
+    if (action === 'clear') return console.log(`removed ${clearLedgers()} file(s)`);
+    fail('--ledger expects path|clear');
+  }
   if (has('show')) {
     const { config, sources, problems } = loadConfig({ cwd });
     if (has('json')) {
@@ -68,7 +75,7 @@ function main() {
   }
   if (has('set')) {
     const file = targetFile();
-    const data = readJson(file) ?? {};
+    const data = readJsonForEdit(file);
     for (const pair of all('set')) {
       const eq = pair.indexOf('=');
       if (eq < 1) fail(`--set expects key=value, got: ${pair}`);
@@ -123,8 +130,13 @@ function main() {
       '  config.mjs --set key=value [--set key=value ...] [--project]',
       '  config.mjs --init [--project] [--force]',
       '  config.mjs --style status|sync|activate|remove [--force]',
+      '  config.mjs --ledger path|clear',
     ].join('\n'),
   );
 }
 
-main();
+try {
+  main();
+} catch (e) {
+  fail(e.message);
+}

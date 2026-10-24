@@ -1,19 +1,23 @@
 // response-config mod: rules in the system prompt, quick replies and tags on submit,
 // item ledger on turn end, a status band, panes, a wizard and /response-config.
-import { read } from 'claude-code'
+import { atom, read } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import {
-  Dollar, cli, configAtom, ensureLedger, ledgerAtom, mutateLedger, refresh, styleAtom,
-} from './engine'
+import { cli, ensureLedger, mutateLedger, refresh } from './engine'
+import type { Dollar } from './engine'
 import { CONFIG_PANE, ITEMS_PANE, installUi } from './ui'
-import { runWizard } from './wizard'
+import { firstRun, runWizard } from './wizard'
 // @ts-ignore bundled plain-JS modules without declarations
-import { applyReplies, registerItems } from '../engine/lib/core.mjs'
+import { applyReplies, registerItems, takeRenumbered } from '../engine/lib/core.mjs'
 // @ts-ignore
 import { effectiveConfig, modeSummary, renderPromptHint, renderRules } from '../engine/lib/hint.mjs'
 // @ts-ignore
 import { hasTags, parseAssistantItems, parseTags, parseUserReplies } from '../engine/lib/parse.mjs'
+
+// The engine reads state statically: each file that reads or writes an atom declares it itself.
+const configAtom = atom({ plugin: 'response-config-mod', key: 'config' } as const, null, { shape: 'config-1' })
+const ledgerAtom = atom({ plugin: 'response-config-mod', key: 'ledger' } as const, null, { shape: 'ledger-1' })
+const styleAtom = atom({ plugin: 'response-config-mod', key: 'style' } as const, 'off')
 
 async function overrides($: Dollar) {
   return (await read($, ledgerAtom))?.session.overrides ?? {}
@@ -41,10 +45,10 @@ export const register: Register = on => {
     if ((await read($, styleAtom)) === 'drifted') {
       $.ui.toast('Managed output style was hand-edited. /response-config style sync --force regenerates it.')
     }
-    if (e.isInteractive && !(await $.store.get('wizardDone'))) {
+    if (e.isInteractive && e.surface !== null && !(await $.store.get('wizardDone'))) {
       void (async () => {
         await $.clock.sleep(1500)
-        if (await runWizard($)) await $.store.set('wizardDone', true)
+        await firstRun($)
       })()
     }
     return next(e)
@@ -69,23 +73,29 @@ export const register: Register = on => {
     const parsed = cfg.overrides.inlineTags ? parseTags(e.text) : { text: e.text, tags: {} }
     const replies = cfg.structured.on ? parseUserReplies(e.text) : []
     let resolved: unknown[] = []
+    let renumbered: unknown[] = []
     await mutateLedger($, l => {
       l.turn += 1
       resolved = applyReplies(l, replies)
+      renumbered = takeRenumbered(l)
     })
     const led = await ensureLedger($)
+    const tagged = hasTags(parsed.tags)
     const eff = effectiveConfig(cfg, led.session.overrides, parsed.tags)
-    const hint = renderPromptHint(eff, led, { resolved, tags: hasTags(parsed.tags) ? parsed.tags : {} })
+    // The full rules are already in the system prompt (prompt.compose), so only the short hint goes here.
+    const hint = renderPromptHint(eff, led, { resolved, renumbered, tags: tagged ? parsed.tags : {} })
     return next({
       ...e,
-      text: parsed.text || e.text,
+      // Only rewrite the text when a tag was removed; otherwise pass it through untouched.
+      ...(tagged ? { text: parsed.text } : {}),
       ...(hint ? { context: [...(e.context ?? []), hint] } : {}),
     })
   })
 
   // Register the numbered items the assistant just produced.
   on('turn.complete', async ($, e, next) => {
-    if (e.agentId === undefined && e.answer) {
+    // Only finished main-loop answers: an interrupted turn may hold a half-written list.
+    if (e.reason === 'answer' && e.agentId === undefined && e.answer) {
       const items = parseAssistantItems(e.answer)
       if (items.length) await mutateLedger($, l => { registerItems(l, items) })
     }

@@ -28,8 +28,19 @@ Decisions
 
 - One counter per letter. Never reset, never reuse, even when an item is resolved.
 - Continue from the highest ID seen in the conversation. If a hook supplied "Next IDs: A3 S2 Q1 D1", use those.
-- One item per line, starting `- A1 `. Text on the same line. No sub-bullets that start with an ID pattern.
+- One item per list line, starting `- A1 `. Text on the same line. No sub-bullets that start with an ID pattern. Bare `A1 text` lines count only directly under a section heading.
 - Re-listing an unresolved item from an earlier turn keeps its original ID; do not renumber.
+- If you reuse an ID that is closed, or give an open ID to a different item, the hook renumbers the new item and tells you the new ID on the next turn.
+
+## Closing items
+
+When an item is finished or settled, close it so it leaves the open list:
+
+```
+- A2 done
+- Q1 answered
+Resolved: S1, D2
+```
 
 ## Quick replies from the user
 
@@ -41,6 +52,9 @@ Decisions
 | `Q1: yes` | Answer to question 1 |
 | `D3: b` | Choose option b of decision 3 |
 | Several, comma separated | `Q1: yes, D2: a, skip S3` |
+| `Q1: why?` | A question about Q1, not an answer |
+
+Verbs count only at the start of the message or of a clause (`to do A1 you need...` is prose). An answer ends at `,` `;` `!` `?`, a newline or a sentence-ending period, and is at most 80 characters.
 
 If a referenced ID does not exist, say so in one line and ask what they meant. After acting on a reply, do not repeat the resolved item.
 
