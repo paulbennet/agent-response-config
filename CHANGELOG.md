@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Mod UI redesigned per surface (design canvas: response-config mod UI). Items pane: grouped by type with type colors from the theme; the terminal draws a keyboard list with a focus marker and hotkeys (d done, s skip, o do, y/n, a-h option, r answer) on the focused item; desktop and VS Code expand the focused item and reveal the other actions on hover; decision options show their labels. The band shows colored open counts with Items and Config buttons; the config pane is grouped into Replies, Language and Output style.
 - `Resolved: A2 (skipped), Q2 (answered), D1` gives each entry its own status. Before this only the first ID was read (PARSE-7).
 - Options on their own lines under a decision or question (`  - (a) ...`) belong to that item, so the items pane offers them as buttons.
 - Mod items pane: every open item is drawn and the pane scrolls once focused; buttons sit in a row; every question and decision has an Answer button. The band reads `open A:0 S:1 Q:1 D:1`, so the counts are not mistaken for IDs (MOD-2).

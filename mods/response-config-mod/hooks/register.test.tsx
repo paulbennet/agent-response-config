@@ -102,17 +102,36 @@ test('finished turns register items; interrupted ones do not; a quick reply reso
   expect(hint).toMatch(/Next IDs: A2 S1 Q2 D1/)
 })
 
-test('the items pane lists open items with reply buttons, on terminal and desktop', async ($, on) => {
+test('the items pane groups open items by type with reply buttons, on terminal and desktop', async ($, on) => {
   engine(on, {})
   await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
-  await $.turn.complete(turn('Actions\n- A1 Run tests\nDecisions\n- D1 Format (a) JSON (b) text'))
+  await $.turn.complete(turn('Actions\n- A1 Run `npm test`\nDecisions\n- D1 Format (a) JSON (b) text'))
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...ITEMS, surface })
-    expect((await ui.find({ type: 'Text', text: /A1: Run tests/ }))?.text).toBe('A1: Run tests')
+    expect(await ui.find({ type: 'Text', text: 'ACTIONS' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'DECISIONS' })).toBeDefined()
+    expect((await ui.find({ type: 'Text', text: /Run npm test/ }))?.text).toBe('Run npm test')
+    expect(await ui.find({ key: 'D1-ans' })).toBeDefined()
     expect(await ui.find({ key: 'A1-done' })).toBeDefined()
     expect(await ui.find({ key: 'D1-a' })).toBeDefined()
     await ui.unmount()
   }
+})
+
+test('items pane design: hotkeys on the focused terminal item, labelled options on desktop', async ($, on) => {
+  engine(on, {})
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
+  await $.turn.complete(turn('Actions\n- A1 Run tests\n- A2 Lint\nQuestions\n- Q1 Ship it? (yes/no)\nDecisions\n- D1 License: (a) MIT (b) Apache-2.0'))
+  const term = await $.ui.mount({ ...ITEMS, surface: 'terminal' })
+  expect((await term.find({ key: 'A1-done' }))?.props.hotkey).toBe('d') // the first item holds the focus
+  expect((await term.find({ key: 'A2-done' }))?.props.hotkey).toBeUndefined()
+  expect((await term.find({ type: 'Text', text: 'Ship it?' }))?.text).toBe('Ship it?') // "(yes/no)" left to the buttons
+  await term.unmount()
+  const desk = await $.ui.mount({ ...ITEMS, surface: 'desktop' })
+  expect((await desk.find({ key: 'D1-a' }))?.props.label).toBe('a · MIT')
+  expect((await desk.find({ key: 'D1-b' }))?.props.label).toBe('b · Apache-2.0')
+  expect((await desk.find({ type: 'Text', text: 'License' }))?.text).toBe('License')
+  await desk.unmount()
 })
 
 test('a config file changed on disk mid-session reaches the next prompt (review 0.1.1 N5)', async ($, on) => {

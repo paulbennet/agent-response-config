@@ -29,6 +29,8 @@ declare module 'claude-code' {
       ledger: Shaped<ModLedger | null>
       style: string
       target: 'user' | 'project'
+      // The open item whose button holds the items pane's focus ring ('' when none).
+      focus: string
     }
   }
 }

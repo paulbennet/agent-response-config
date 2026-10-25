@@ -241,14 +241,14 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H10 | `/response-config` shows the mode | Manual | Pass, as `/response-config-mod` with the plugin installed |
 | H11 | `on`, `off`, `verbose`, `terse`, `reset` change the next reply | Manual | Pass |
 | H12 | `/response-config pane`: edits save to the config file and the style syncs | Manual | Pass (level saved to the user file; managed style rewritten; band updated) |
-| H13 | `/response-config items`: Do, Done, Skip, Yes, No, option and Answer buttons send the right reply | Manual | Fail: items hidden, D1 had no buttons, Q2/D1 not closed (PARSE-7, MOD-2). Fixed; retest |
-| H14 | The band above the prompt shows the mode and open counts, and updates after a turn | Manual | |
-| H15 | `/response-config style status` and `style sync` | Manual | |
-| H16 | With the plugin hooks also installed, the hooks stand down and the rules appear once | Manual | |
-| H17 | Change a setting with `config.mjs --set` in a shell mid-session; the next reply follows it | Manual | |
+| H13 | `/response-config items`: Do, Done, Skip, Yes, No, option and Answer buttons send the right reply | Manual | Pass after the PARSE-7 and MOD-2 fixes |
+| H14 | The band above the prompt shows the mode and open counts, and updates after a turn | Manual | Pass |
+| H15 | `/response-config style status` and `style sync` | Manual | Pass (drift reported; sync refused; `--force` regenerated) |
+| H16 | With the plugin hooks also installed, the hooks stand down and the rules appear once | Manual | Pass (plugin and `setup.mjs` hooks both silent in mod sessions; rules from the system prompt only) |
+| H17 | Change a setting with `config.mjs --set` in a shell mid-session; the next reply follows it | Manual | Pass |
 | H18 | A session left open over an hour keeps the hooks stood down | Manual | |
-| H19 | The same in the Claude desktop app | Manual | |
-| H20 | The same in the VS Code extension | Manual | |
+| H19 | The same in the Claude desktop app | Manual | Pass (band, items pane and buttons work) |
+| H20 | The same in the VS Code extension | Manual | Pass (band, items pane and buttons work) |
 
 **H16 steps.** Install both plugins and start with `--debug`. Pass when the classic hooks print nothing for this session. The mod's rules are in the system prompt instead.
 
