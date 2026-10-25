@@ -17,19 +17,21 @@ export function emptyLedger(agent, sessionId) {
     sessionId,
     counters: { A: 0, S: 0, Q: 0, D: 0 },
     items: [],
-    renumbered: [],
-    session: { overrides: {}, rulesSentAt: 0 },
+    reused: [],
+    session: { overrides: {}, rulesSentAt: 0, rulesTurn: 0 },
     turn: 0,
     updatedAt: 0,
   };
 }
 
-// Older ledgers may lack newer fields.
+// Older ledgers may lack newer fields, or carry the retired `renumbered` queue.
 export function normalizeLedger(l) {
-  l.renumbered ??= [];
+  delete l.renumbered;
+  l.reused ??= [];
   l.session ??= {};
   l.session.overrides ??= {};
   l.session.rulesSentAt ??= 0;
+  l.session.rulesTurn ??= 0;
   return l;
 }
 
@@ -47,11 +49,13 @@ export function sameItem(a, b) {
   return common / Math.min(x.size, y.size) >= 0.5;
 }
 
-// Register items the assistant produced.
+// Register items the assistant produced. The ID the user sees is the ID that is tracked:
+// the ledger never stores an item under a number the assistant did not print.
 // - A new ID is added as open.
-// - A re-listed open item with the same meaning keeps its ID.
-// - An ID that collides with a closed item, or with an open item about something else,
-//   gets the next free number; the change is queued in `renumbered` for the next hint.
+// - A re-listed item with the same meaning keeps its ID and status (a recap of a closed
+//   item stays closed).
+// - An ID reused for something else takes over the ID. The earlier item is retired as
+//   `superseded` under `A1~1` (out of ID lookup) and queued in `reused` for the next hint.
 // - Entries with `close` mark an existing item done/answered/skipped.
 export function registerItems(ledger, parsed) {
   normalizeLedger(ledger);
@@ -63,22 +67,24 @@ export function registerItems(ledger, parsed) {
       if (existing) existing.status = p.close;
       continue;
     }
-    if (existing && isOpen(existing) && sameItem(existing.text, p.text)) {
-      existing.text = p.text;
+    if (existing && sameItem(existing.text, p.text)) {
+      if (isOpen(existing)) existing.text = p.text;
       continue;
     }
-    let n = p.n;
     if (existing) {
-      n = ledger.counters[p.type] + 1;
-      ledger.renumbered.push({ from: id, to: `${p.type}${n}` });
+      const retired = ledger.items.filter((i) => i.id.startsWith(`${id}~`)).length + 1;
+      existing.id = `${id}~${retired}`;
+      existing.status = 'superseded';
+      ledger.reused.push({ id, text: existing.text });
     }
-    ledger.items.push({ id: `${p.type}${n}`, type: p.type, n, text: p.text, status: 'open', turn: ledger.turn });
-    ledger.counters[p.type] = Math.max(ledger.counters[p.type], n);
-    added.push(`${p.type}${n}`);
+    ledger.items.push({ id, type: p.type, n: p.n, text: p.text, status: 'open', turn: ledger.turn });
+    ledger.counters[p.type] = Math.max(ledger.counters[p.type], p.n);
+    added.push(id);
   }
   return added;
 }
 
+// A bare Q or D id is a pointer ("let's look at Q1"), so `ref` leaves its status alone.
 const STATUS = { do: 'in-progress', done: 'done', skip: 'skipped', answer: 'answered' };
 
 export function applyReplies(ledger, replies) {
@@ -96,10 +102,10 @@ export function applyReplies(ledger, replies) {
   return resolved;
 }
 
-// Returns and clears the queued renumbering notices.
-export function takeRenumbered(ledger) {
-  const list = ledger.renumbered ?? [];
-  ledger.renumbered = [];
+// Returns and clears the queued notices about reused IDs.
+export function takeReused(ledger) {
+  const list = ledger.reused ?? [];
+  ledger.reused = [];
   return list;
 }
 

@@ -7,9 +7,8 @@
 //   node config.mjs --style status|sync|activate|remove [--force]
 //   node config.mjs --ledger path|clear
 import fs from 'node:fs';
-import path from 'node:path';
 import {
-  PROJECT_FILE, deepMerge, getPath, loadConfig, loadDefaults, parseValue, readJsonForEdit, setPath,
+  deepMerge, getPath, loadConfig, loadDefaults, parseValue, projectConfigTarget, readJsonForEdit, setPath,
   userConfigPath, validate, writeJsonAtomic,
 } from './lib/config.mjs';
 import { clearLedgers, markModActive, sessionsDir } from './lib/ledger.mjs';
@@ -23,8 +22,21 @@ const all = (f) => argv.flatMap((a, i) => (a === `--${f}` && argv[i + 1] ? [argv
 const one = (f) => all(f)[0];
 const cwd = process.cwd();
 
+// --project edits the project file already in effect (found walking up), so a write from a
+// subfolder never creates a second file that shadows it. A new file goes to the project root.
 function targetFile() {
-  return has('project') ? path.join(cwd, PROJECT_FILE) : userConfigPath();
+  return has('project') ? projectConfigTarget(cwd) : userConfigPath();
+}
+
+// The files the config is read from, with their mtimes, so the mod can tell when to reload.
+function watchList() {
+  return [userConfigPath(), projectConfigTarget(cwd)].map((file) => {
+    try {
+      return { path: file, mtimeMs: fs.statSync(file).mtimeMs };
+    } catch {
+      return { path: file, mtimeMs: null };
+    }
+  });
 }
 
 function fail(msg) {
@@ -56,7 +68,7 @@ function main() {
     const { config, sources, problems } = loadConfig({ cwd });
     if (has('json')) {
       const style = config.claude.outputStyle.manage ? styleStatus(config, { cwd }).state : 'off';
-      return console.log(JSON.stringify({ config, sources, problems, style }));
+      return console.log(JSON.stringify({ config, sources, problems, style, watch: watchList() }));
     }
     console.log(`sources: ${sources.join(', ')}`);
     for (const p of problems) console.log(`problem: ${p}`);

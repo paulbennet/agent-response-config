@@ -6,11 +6,11 @@ What is verified, what is not, and where the build differs from [implementation-
 
 | Check | How |
 |---|---|
-| Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 44 tests) on Windows |
+| Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 52 tests) on Windows |
 | Mod engine copy matches the skill scripts | `node tools/sync-mod.mjs --check` (part of `npm test`) |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |
 | Mod manifest, hooks module, state contract | `claude plugin validate mods/response-config-mod` on 2.1.310 |
-| Mod behaviour (tags, quick replies, turn registration, items pane on terminal and desktop) | `claude plugin test mods/response-config-mod` on 2.1.310, 4 tests |
+| Mod behaviour (tags, quick replies, turn registration, reused IDs, config reload on file change, items pane on terminal and desktop) | `claude plugin test mods/response-config-mod` on 2.1.310, 6 tests |
 | Mod types | `tsc` against the 2.1.310 API declarations |
 
 ## Not verified yet

@@ -76,6 +76,35 @@ export function findProjectConfig(cwd, home = os.homedir()) {
   }
 }
 
+export const homeDir = (env = process.env) => env.RC_HOME_DIR || os.homedir();
+
+// The folder that holds .git, walking up from cwd and stopping before the home directory.
+export function findGitRoot(cwd, home = os.homedir()) {
+  let dir = path.resolve(cwd || process.cwd());
+  const stop = path.resolve(home);
+  for (;;) {
+    if (dir === stop) return undefined;
+    if (fs.existsSync(path.join(dir, '.git'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+}
+
+// One root for everything project-scoped (config file, managed style, settings.local.json):
+// the folder of an existing project file, else the git root, else cwd.
+export function projectRoot(cwd, env = process.env) {
+  const start = path.resolve(cwd || process.cwd());
+  const home = homeDir(env);
+  const found = findProjectConfig(start, home);
+  if (found) return path.dirname(found);
+  return findGitRoot(start, home) ?? start;
+}
+
+// Where a project-scope write goes: the file already in effect, or a new one at the root.
+export const projectConfigTarget = (cwd, env = process.env) =>
+  findProjectConfig(cwd, homeDir(env)) ?? path.join(projectRoot(cwd, env), PROJECT_FILE);
+
 // Minimal structural validation matching config.schema.json.
 const ENUMS = {
   'minimal.level': ['low', 'medium', 'high', 'extreme'],
@@ -133,7 +162,7 @@ export function loadConfig({ cwd, env = process.env } = {}) {
   const problems = [];
   let cfg = loadDefaults();
   const layers = [['user', userConfigPath(env)]];
-  const projectPath = findProjectConfig(cwd, env.RC_HOME_DIR || os.homedir());
+  const projectPath = findProjectConfig(cwd, homeDir(env));
   if (projectPath) layers.push([`project:${projectPath}`, projectPath]);
   for (const [name, file] of layers) {
     const r = readJsonStrict(file);

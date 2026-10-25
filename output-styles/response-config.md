@@ -18,7 +18,7 @@ STRUCTURE
   Suggestions (S)
   Questions (Q)
   Decisions (D)
-- One bullet per item, written "- A1 text". Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.
+- One bullet per item, written "- A1 text", under its section heading. Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.
 - Omit sections that are empty.
 - Anything the user must notice (risk, caveat, blocked step, follow-up) goes in an item, not in the summary prose.
 - Questions need a concrete answer form, for example "(yes/no)". Decisions list lettered options: "(a) ... (b) ...".

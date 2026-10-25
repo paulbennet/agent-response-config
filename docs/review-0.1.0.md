@@ -150,7 +150,7 @@ All findings were addressed. Regression tests reference the finding ID in their 
 | M1 | fixed | Items need a list marker, or a section heading for bare lines; table rows skipped. |
 | M2 | fixed | Verbs only at message/clause start; answers stop at sentence end, max 80 chars; `Q1: ...?` is a question (`ref`), not an answer. |
 | M3 | fixed | `parseTags` removes only the tag and one following space; the mod rewrites the prompt only when a tag was present. |
-| M4 | fixed | Reused or conflicting IDs get the next free number; the next prompt hint announces the change. |
+| M4 | reworked | The first fix (renumber to the next free ID) shifted the model's own IDs; see [review-0.1.1.md](review-0.1.1.md) N1. Now the displayed ID wins and the earlier item is retired. |
 | M5 | fixed | `- A2 done` and `Resolved: A2, Q1` close items; `do` sets in-progress for A and S alike. Documented in SKILL.md and format.md. |
 | M6 | fixed | `isMain` compares resolved paths and tolerates a missing `argv[1]`. A crash in `run` still prints `{}` for Codex Stop. |
 | M7 | fixed | `--vscode` requires `--scope project`. |

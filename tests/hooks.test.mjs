@@ -5,12 +5,14 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { run } from '../skills/response-config/scripts/hook.mjs';
+import { RULES_EVERY, run } from '../skills/response-config/scripts/hook.mjs';
 import { loadConfig, validate } from '../skills/response-config/scripts/lib/config.mjs';
 import { loadLedger, markModActive } from '../skills/response-config/scripts/lib/ledger.mjs';
 import { lastAssistantText } from '../skills/response-config/scripts/lib/adapters/index.mjs';
 
-const HOOK = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'response-config', 'scripts', 'hook.mjs');
+const SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'response-config', 'scripts');
+const HOOK = path.join(SCRIPTS, 'hook.mjs');
+const CLI = path.join(SCRIPTS, 'config.mjs');
 
 function env() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rc-test-'));
@@ -29,7 +31,7 @@ test('session-start emits rules as additionalContext (claude)', () => {
 
 test('stop registers items, prompt resolves replies and advances IDs', () => {
   const e = env();
-  run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: '- A1 Run tests\n- Q1 Keep flag? (yes/no)\n- S3 Cache it' }, env: e });
+  run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: 'Actions\n- A1 Run tests\nQuestions\n- Q1 Keep flag? (yes/no)\nSuggestions\n- S3 Cache it' }, env: e });
   const l = loadLedger('claude', 's', e);
   assert.deepEqual(l.counters, { A: 1, S: 3, Q: 1, D: 0 });
   const out = JSON.parse(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'Q1: yes, done A1' }, env: e })).hookSpecificOutput.additionalContext;
@@ -117,21 +119,97 @@ test('prompt hint carries the full rules until a session hint was delivered (rev
   assert.doesNotMatch(ctx(e2), /BREVITY/);
 });
 
-test('a reused ID is renumbered and announced on the next prompt (review M4)', () => {
+const session = (e) => ({
+  stop: (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e }),
+  say: (prompt) => JSON.parse(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt }, env: e })).hookSpecificOutput.additionalContext,
+  items: () => loadLedger('claude', 's', e).items.map((i) => `${i.id}:${i.status}:${i.text}`),
+});
+
+test('a reused ID keeps the ID the user sees; the old item is retired (review 0.1.1 N1)', () => {
+  const s = session(env());
+  s.stop('Actions\n- A1 Run tests\n- A2 Write docs');
+  s.say('done A1');
+  s.stop('Actions\n- A1 Deploy staging\n- A3 Tag release');
+  assert.deepEqual(s.items(), [
+    'A1~1:superseded:Run tests', 'A2:open:Write docs', 'A1:open:Deploy staging', 'A3:open:Tag release',
+  ]);
+  const hint = s.say('done A3');
+  assert.match(hint, /reused A1 for a new item; the earlier A1 \(Run tests\) is no longer tracked/);
+  assert.match(hint, /User finished A3: Tag release/);
+  assert.match(hint, /Open: A2 A1/);
+  assert.match(hint, /Next IDs: A4 /);
+  assert.doesNotMatch(s.say('hi'), /reused A/);
+});
+
+test('two collisions in one reply both keep their displayed IDs', () => {
+  const s = session(env());
+  s.stop('Actions\n- A1 Run tests\n- A2 Write docs');
+  s.say('done A1, done A2');
+  s.stop('Actions\n- A1 Deploy staging\n- A2 Rotate keys');
+  assert.deepEqual(s.items().filter((x) => x.includes(':open:')), ['A1:open:Deploy staging', 'A2:open:Rotate keys']);
+  const hint = s.say('A2');
+  assert.match(hint, /reused A1/);
+  assert.match(hint, /reused A2/);
+  assert.match(hint, /User started A2: Rotate keys/);
+});
+
+test('a recap of a finished item stays closed and is not a reuse (review 0.1.1 N2)', () => {
+  const s = session(env());
+  s.stop('Actions\n- A1 Run tests\n- A2 Write docs');
+  s.say('done A1');
+  s.stop('Summary.\n\nActions\n- A1 Run tests (completed)\n- A2 Write docs');
+  assert.deepEqual(s.items(), ['A1:done:Run tests', 'A2:open:Write docs']);
+  assert.doesNotMatch(s.say('hi'), /reused A/);
+  s.stop('Actions\n- A2 Write docs ✓');
+  assert.deepEqual(s.items(), ['A1:done:Run tests', 'A2:done:Write docs']);
+});
+
+test('a bare question ID is a pointer, not in progress (review 0.1.1 N7)', () => {
+  const s = session(env());
+  s.stop('Questions\n- Q1 Keep the flag? (yes/no)');
+  const hint = s.say('Q1');
+  assert.match(hint, /User pointed at Q1 \(Keep the flag\? \(yes\/no\)\)/);
+  assert.deepEqual(s.items(), ['Q1:open:Keep the flag? (yes/no)']);
+});
+
+test('the full rules come back every RULES_EVERY prompts (review 0.1.1 N10)', () => {
   const e = env();
-  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
-  stop('- A1 Run tests');
-  run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'done A1' }, env: e });
-  stop('- A1 Deploy to staging');
-  const l = loadLedger('claude', 's', e);
-  assert.deepEqual(l.items.map((i) => `${i.id}:${i.status}`), ['A1:done', 'A2:open']);
-  assert.match(ctx(e), /reused A1; that item is now A2/);
+  run({ agent: 'copilot', event: 'session-start', input: { sessionId: 'c', cwd: e.dir }, env: e });
+  const say = () => JSON.parse(run({ agent: 'copilot', event: 'prompt-transformed', input: { sessionId: 'c', cwd: e.dir, prompt: 'hi', transformedPrompt: 'hi' }, env: e })).modifiedTransformedPrompt;
+  const withRules = [];
+  for (let i = 1; i <= RULES_EVERY * 2; i += 1) if (/BREVITY/.test(say())) withRules.push(i);
+  assert.deepEqual(withRules, [RULES_EVERY, RULES_EVERY * 2]);
+});
+
+test('project-scope style and --set --project use the project root (review 0.1.1 N3, N4)', () => {
+  const e = env();
+  const repo = path.join(e.dir, 'repo');
+  const sub = path.join(repo, 'src', 'deep');
+  fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
+  fs.mkdirSync(sub, { recursive: true });
+  const cenv = { ...e, RC_HOME_DIR: e.dir };
+  const cli = (...args) => spawnSync(process.execPath, [CLI, ...args], { cwd: sub, encoding: 'utf8', env: cenv });
+  let r = cli('--set', 'claude.outputStyle.manage=true', '--set', 'claude.outputStyle.scope=project', '--project');
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(fs.existsSync(path.join(repo, '.response-config.json')));
+  assert.ok(!fs.existsSync(path.join(sub, '.response-config.json')));
+  assert.ok(fs.existsSync(path.join(repo, '.claude', 'output-styles', 'response-config-managed.md')));
+  r = cli('--set', 'minimal.level=low', '--project');
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(repo, '.response-config.json'), 'utf8')).minimal.level, 'low');
+  run({ agent: 'claude', event: 'session-start', input: { session_id: 's', cwd: sub, source: 'startup' }, env: cenv });
+  assert.ok(!fs.existsSync(path.join(repo, 'src', '.claude')));
+  assert.ok(!fs.existsSync(path.join(sub, '.claude')));
+  const shown = JSON.parse(cli('--show', '--json').stdout);
+  assert.equal(shown.style, 'in-sync');
+  assert.deepEqual(shown.watch.map((w) => path.basename(w.path)), ['config.json', '.response-config.json']);
+  assert.deepEqual(shown.watch.map((w) => typeof w.mtimeMs), ['object', 'number']); // no user file yet
 });
 
 test('the assistant can close items itself (review M5)', () => {
   const e = env();
   const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
-  stop('- A1 Run tests\n- S1 Cache it');
+  stop('Actions\n- A1 Run tests\nSuggestions\n- S1 Cache it');
   stop('Tests pass.\nResolved: A1');
   const l = loadLedger('claude', 's', e);
   assert.deepEqual(l.items.map((i) => `${i.id}:${i.status}`), ['A1:done', 'S1:open']);
@@ -139,7 +217,7 @@ test('the assistant can close items itself (review M5)', () => {
 
 test('do marks actions and suggestions in progress alike', () => {
   const e = env();
-  run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: '- A1 x\n- S1 y' }, env: e });
+  run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: 'Actions\n- A1 x\nSuggestions\n- S1 y' }, env: e });
   run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'A1, S1' }, env: e });
   assert.deepEqual(loadLedger('claude', 's', e).items.map((i) => i.status), ['in-progress', 'in-progress']);
 });

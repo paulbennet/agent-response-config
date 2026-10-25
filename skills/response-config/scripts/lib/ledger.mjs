@@ -5,7 +5,7 @@ import { configDir, readJson, writeJsonAtomic } from './config.mjs';
 import { emptyLedger, normalizeLedger } from './core.mjs';
 
 export {
-  TYPES, applyReplies, emptyLedger, nextIds, normalizeLedger, openItems, registerItems, takeRenumbered,
+  TYPES, applyReplies, emptyLedger, nextIds, normalizeLedger, openItems, registerItems, takeReused,
 } from './core.mjs';
 
 // Session ids are normalised so the mod ($.session.id(), a transcript file name) and the
@@ -27,6 +27,8 @@ export function saveLedger(ledger, env = process.env) {
 }
 
 // --- mod-active marker: the Claude mod writes it so classic hooks stand down ---
+// It expires after a day so a session resumed without the mod gets its hooks back; the mod
+// rewrites it at session start and then at most every hour while prompts arrive.
 
 const modDir = (env) => path.join(configDir(env), 'mod-active');
 

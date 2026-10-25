@@ -5,18 +5,33 @@ export function stripFences(text) {
   return String(text ?? '').replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[ \t]*$/gm, '');
 }
 
-// A list item that starts with an ID: "- A1 text", "* **Q2:** text", "3. D1 - text".
-const LISTED_RE = /^\s*(?:[-*+]|\d+[.)])\s+\**([ASQD])(\d+)\**\s*[:.)–—-]?\**\s+(\S.*)$/;
-// A bare "A1 text" line, accepted only inside a section headed Actions/Suggestions/Questions/Decisions.
-const BARE_RE = /^\s*\**([ASQD])(\d+)\**\s*[:.)–—-]?\**\s+(\S.*)$/;
+// A list line that starts with an ID: "- A1 text", "* **Q2:** text", "3. D1 - text".
+// Groups: 1 bold before the ID, 2 type, 3 number, 4 separator, 5 text.
+const LISTED_RE = /^\s*(?:[-*+]|\d+[.)])\s+(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
+// The same without a list marker; accepted only inside a section.
+const BARE_RE = /^\s*(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
+const LIST_LINE_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
 const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)\**\s*:?\s*\**\s*$/i;
 // "Resolved: A2, Q1" / "Done: A1" / "Closed: S3"
 const RESOLVED_RE = /^\s*\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)\s*$/i;
-// An item whose whole text is a status: "- A2 done", "- Q1 (answered)"
-const CLOSING_TEXT_RE = /^\(?(done|resolved|answered|skipped|closed)\)?\.?$/i;
+const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';
+// An item whose whole text is a status: "- A2 done", "- Q1 (answered)", "- A3 ✓"
+const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]+)$`, 'i');
+// A recap that ends in a status: "Run tests (completed)", "Run tests [done]", "Run tests - done", "Run tests ✓"
+const TRAILING_CLOSE_RE = new RegExp(
+  `\\s*(?:\\((${STATUS_WORD})\\)|\\[(${STATUS_WORD})\\]|[—–-]\\s*(${STATUS_WORD})|([✓✔✅]+))\\.?\\s*$`, 'i',
+);
 
-const CLOSE_STATUS = { done: 'done', resolved: 'done', closed: 'done', answered: 'answered', skipped: 'skipped' };
+const CLOSE_STATUS = {
+  done: 'done', completed: 'done', complete: 'done', finished: 'done', fixed: 'done', resolved: 'done', closed: 'done',
+  answered: 'answered', skipped: 'skipped',
+};
+const closeStatus = (word) => (word ? CLOSE_STATUS[word.toLowerCase()] : 'done');
 
+// Items count when they sit under an Actions/Suggestions/Questions/Decisions heading. Outside
+// a section only a marked ID counts ("- A1: text", "- **A1** text"), so numbered prose such as
+// "1. Q3 2026 revenue grew" or "- S3 bucket is public" is not taken for an item.
+// Closing lines ("- A2 done", "Resolved: A2") count anywhere.
 export function parseAssistantItems(text) {
   const items = [];
   let inSection = false;
@@ -32,19 +47,33 @@ export function parseAssistantItems(text) {
     }
     const m = LISTED_RE.exec(line) ?? (inSection ? BARE_RE.exec(line) : null);
     if (!m) {
-      if (line.trim() && !/^\s*(?:[-*+]|\d+[.)])\s/.test(line)) inSection = false;
+      if (line.trim() && !LIST_LINE_RE.test(line)) inSection = false;
       continue;
     }
-    const body = m[3].trim().replace(/\*+$/, '');
-    const close = CLOSING_TEXT_RE.exec(body);
-    items.push(close
-      ? { type: m[1], n: Number(m[2]), text: '', close: CLOSE_STATUS[close[1].toLowerCase()] }
-      : { type: m[1], n: Number(m[2]), text: body });
+    const [, bold, type, num, sep, rest] = m;
+    const n = Number(num);
+    const body = rest.trim().replace(/\*+$/, '').trim();
+    const whole = CLOSING_TEXT_RE.exec(body);
+    if (whole) {
+      items.push({ type, n, text: '', close: closeStatus(whole[1]) });
+      continue;
+    }
+    if (!inSection && !bold && !sep) continue;
+    const tail = TRAILING_CLOSE_RE.exec(body);
+    const itemText = tail ? body.slice(0, tail.index).trim() : body;
+    if (tail && itemText) {
+      items.push({ type, n, text: itemText, close: closeStatus(tail[1] ?? tail[2] ?? tail[3]) });
+      continue;
+    }
+    items.push({ type, n, text: body });
   }
   return items;
 }
 
 const ID = '[ASQD]\\d+';
+const ID_LIST = `${ID}(?:[ \\t]*(?:,|and)?[ \\t]*${ID})*`;
+// Words that may come before a reply verb without making it prose.
+const COURTESY = '(?:(?:please|pls|ok|okay|yes|yeah|yep|sure|now|then|go ahead and|let\'s|lets)[ \\t]*,?[ \\t]+)*';
 const MAX_ANSWER = 80;
 
 export function parseUserReplies(text) {
@@ -58,10 +87,22 @@ export function parseUserReplies(text) {
       replies.push(r);
     }
   };
-  // "done A1", "do A2", "skip S3 S4" at the start of the message or of a clause.
-  const verbRe = new RegExp(`(?:^|[\\n,;])[ \\t]*(done|do|skip)[ \\t]+(${ID}(?:[ \\t]*,?[ \\t]*${ID})*)(?=$|[\\s.,;!?])`, 'gi');
+  const ids = (s) => s.match(new RegExp(ID, 'gi')) ?? [];
+  // "done A1", "do A2", "skip S3 S4" at the start of the message or of a clause, optionally
+  // after a courtesy word: "please do A2", "ok, do A2", "go ahead and do A2".
+  const verbRe = new RegExp(
+    `(?:^|[\\n,;.!])[ \\t]*${COURTESY}(done|do|skip)[ \\t]+(${ID_LIST})(?=$|[\\s.,;!?])`, 'gi',
+  );
   for (const m of t.matchAll(verbRe)) {
-    for (const id of m[2].match(new RegExp(ID, 'gi')) ?? []) push({ kind: m[1].toLowerCase(), id: id.toUpperCase() });
+    for (const id of ids(m[2])) push({ kind: m[1].toLowerCase(), id: id.toUpperCase() });
+  }
+  // Postfix form at clause start, ending the clause: "A1 done", "S2, S3 skip", "A1 is done."
+  const postfixRe = new RegExp(
+    `(?:^|[\\n,;.!])[ \\t]*(${ID_LIST})[ \\t]+(?:is[ \\t]+|are[ \\t]+)?(done|finished|skip|skipped)(?=[ \\t]*(?:$|[\\n.,;!?]))`, 'gi',
+  );
+  for (const m of t.matchAll(postfixRe)) {
+    const kind = /^skip/i.test(m[2]) ? 'skip' : 'done';
+    for (const id of ids(m[1])) push({ kind, id: id.toUpperCase() });
   }
   // "Q1: yes", "D3 = b". The value ends at , ; ! ? newline or a sentence-ending period.
   const answerRe = /(?:^|[\s,;])([QD]\d+)\s*[:=]\s*((?:[^,;!?\n.]|\.(?=\S))+)(\??)/gi;
@@ -71,9 +112,13 @@ export function parseUserReplies(text) {
     if (m[3] === '?') push({ kind: 'ref', id, value: value.slice(0, MAX_ANSWER) });
     else if (value && value.length <= MAX_ANSWER) push({ kind: 'answer', id, value });
   }
-  // A message that is only IDs ("A2", "A2, S1") means "do these".
+  // A message that is only IDs ("A2", "A2, S1") means "do these" for actions and suggestions;
+  // for questions and decisions it only points at the item.
   if (replies.length === 0 && new RegExp(`^[\\s,;]*(?:${ID}[\\s,;]*)+$`, 'i').test(t)) {
-    for (const id of t.match(new RegExp(ID, 'gi'))) push({ kind: 'do', id: id.toUpperCase() });
+    for (const raw of ids(t)) {
+      const id = raw.toUpperCase();
+      push(id[0] === 'Q' || id[0] === 'D' ? { kind: 'ref', id, value: '' } : { kind: 'do', id });
+    }
   }
   return replies;
 }

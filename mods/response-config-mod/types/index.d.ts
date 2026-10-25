@@ -3,7 +3,7 @@ export type ModItem = {
   type: 'A' | 'S' | 'Q' | 'D'
   n: number
   text: string
-  status: 'open' | 'in-progress' | 'done' | 'skipped' | 'answered'
+  status: 'open' | 'in-progress' | 'done' | 'skipped' | 'answered' | 'superseded'
   answer?: string
   turn: number
 }
@@ -13,8 +13,8 @@ export type ModLedger = {
   sessionId: string
   counters: { A: number; S: number; Q: number; D: number }
   items: ModItem[]
-  renumbered: { from: string; to: string }[]
-  session: { overrides: Record<string, unknown>; rulesSentAt: number }
+  reused: { id: string; text: string }[]
+  session: { overrides: Record<string, unknown>; rulesSentAt: number; rulesTurn: number }
   turn: number
   updatedAt: number
 }

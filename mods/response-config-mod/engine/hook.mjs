@@ -8,7 +8,7 @@ import { adapters } from './lib/adapters/index.mjs';
 import { loadConfig } from './lib/config.mjs';
 import { effectiveConfig, renderPromptHint, renderSessionHint } from './lib/hint.mjs';
 import {
-  applyReplies, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeRenumbered,
+  applyReplies, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeReused,
 } from './lib/ledger.mjs';
 import { hasTags, parseAssistantItems, parseTags, parseUserReplies } from './lib/parse.mjs';
 import { driftNote, syncStyle } from './lib/style.mjs';
@@ -29,6 +29,13 @@ async function readStdin() {
 }
 
 const isPrompt = (event) => event === 'prompt' || event === 'prompt-transformed';
+
+// The full rules are re-sent this often, in prompts, in case a compaction dropped them and the
+// host did not fire a session-start hook again (Copilot is not documented to).
+export const RULES_EVERY = 20;
+
+// Session switches (/response-config on|off|verbose) belong to the Claude mod, which keeps them
+// in its own state. The classic hooks only apply the config files and one-turn tags.
 
 export function run({ agent, event, input, env = process.env }) {
   const adapter = adapters[agent];
@@ -51,10 +58,11 @@ export function run({ agent, event, input, env = process.env }) {
         notes.push(`Output style sync failed: ${e.message}`);
       }
     }
-    const cfg = effectiveConfig(config, ledger?.session.overrides);
+    const cfg = effectiveConfig(config);
     const hint = renderSessionHint(cfg, ledger, { notes });
     if (ledger) {
       ledger.session.rulesSentAt = Date.now();
+      ledger.session.rulesTurn = ledger.turn;
       saveLedger(ledger, env);
     }
     return adapter.format(event, { hint, normalized: n });
@@ -68,19 +76,24 @@ export function run({ agent, event, input, env = process.env }) {
     const ledger = config.hooks.ledger ? loadLedger(agent, n.sessionId, env) : null;
     const replies = config.structured.on ? parseUserReplies(n.prompt) : [];
     let resolved = [];
-    let renumbered = [];
+    let reused = [];
     // Without a ledger we cannot know whether the session hint arrived, so always send the rules.
-    const withRules = !ledger || !ledger.session.rulesSentAt;
+    let withRules = !ledger;
     if (ledger) {
       ledger.turn += 1;
+      const s = ledger.session;
+      withRules = !s.rulesSentAt || ledger.turn - s.rulesTurn >= RULES_EVERY;
       resolved = applyReplies(ledger, replies);
-      renumbered = takeRenumbered(ledger);
-      if (withRules) ledger.session.rulesSentAt = Date.now();
+      reused = takeReused(ledger);
+      if (withRules) {
+        s.rulesSentAt = Date.now();
+        s.rulesTurn = ledger.turn;
+      }
       saveLedger(ledger, env);
     }
-    const cfg = effectiveConfig(config, ledger?.session.overrides, parsed.tags);
+    const cfg = effectiveConfig(config, {}, parsed.tags);
     const hint = renderPromptHint(cfg, ledger, {
-      resolved, renumbered, withRules, problems, tags: hasTags(parsed.tags) ? parsed.tags : {},
+      resolved, reused, withRules, problems, tags: hasTags(parsed.tags) ? parsed.tags : {},
     });
     return adapter.format(event, { hint, normalized: n });
   }

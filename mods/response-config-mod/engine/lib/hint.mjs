@@ -93,7 +93,7 @@ export function renderRules(cfg) {
     lines.push('- Shape: a minimal summary of what happened, then the sections below.');
     for (const s of cfg.structured.sections) lines.push(`  ${SECTION_LABEL[s]}`);
     lines.push(
-      '- One bullet per item, written "- A1 text". Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.',
+      '- One bullet per item, written "- A1 text", under its section heading. Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.',
     );
     lines.push(
       cfg.structured.showEmptySections
@@ -164,7 +164,7 @@ export function renderDigest(cfg) {
 const VERB = { do: 'started', done: 'finished', skip: 'skipped' };
 
 // Short per-prompt hint. withRules: also include the full rules (session hint not delivered).
-export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, problems = [], renumbered = [], withRules = false } = {}) {
+export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, problems = [], reused = [], withRules = false } = {}) {
   if (!cfg.enabled) {
     return tags.off ? '[response-config] off for this turn (!off). Answer normally.' : '';
   }
@@ -177,10 +177,13 @@ export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, proble
   const tagNames = Object.entries(tags).map(([k, v]) => (v === true ? `!${k}` : `!${k}=${v}`));
   if (tagNames.length) lines.push(`Tags this turn only: ${tagNames.join(' ')}.`);
   if (cfg.structured.on && ledger) {
-    for (const r of renumbered.slice(0, 4)) lines.push(`Your last reply reused ${r.from}; that item is now ${r.to}. Use ${r.to} from now on.`);
+    for (const r of reused.slice(0, 4)) {
+      lines.push(`Your last reply reused ${r.id} for a new item; the earlier ${r.id} (${r.text}) is no longer tracked. Never reuse IDs: take new ones from "Next IDs".`);
+    }
     for (const r of resolved.slice(0, 6)) {
       if (r.unknown) lines.push(`User referenced ${r.id}, which is not tracked; ask which item they mean.`);
       else if (r.kind === 'answer') lines.push(`User answered ${r.id} (${r.text}): "${r.value}".`);
+      else if (r.kind === 'ref' && !r.value) lines.push(`User pointed at ${r.id} (${r.text}); help them settle it.`);
       else if (r.kind === 'ref') lines.push(`User asked about ${r.id} (${r.text}): "${r.value}?"`);
       else lines.push(`User ${VERB[r.kind]} ${r.id}: ${r.text}.`);
     }

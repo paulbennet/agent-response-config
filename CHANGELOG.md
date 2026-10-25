@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+Fixes from [docs/review-0.1.1.md](docs/review-0.1.1.md):
+
+- Item tracking keeps the ID the user sees: a reused ID takes over and the old item is retired, instead of shifting the new IDs.
+- A recap of a finished item no longer reopens it; trailing `(done)`, `(completed)` or `✓` close an item.
+- Project-scope output style, `settings.local.json` and `--set --project` all use the project root, so subfolders no longer get their own copies.
+- The mod reloads the config when a config file changes on disk, and refreshes its stand-down marker hourly.
+- Replies `please do A2`, `ok do A2` and `A1 done` are recognised; a bare `Q1` points at the question instead of marking it in progress.
+- Outside a section heading, only marked IDs (`- A1: text`) count, so prose like `1. Q3 2026 revenue` is ignored.
+- The full rules are re-sent every 20 prompts, for hosts that do not re-run session start after compaction.
+- The classic hooks no longer read session switches, which only the mod sets.
+
 Fixes from [docs/review-0.1.0.md](docs/review-0.1.0.md):
 
 - Setup, `--set` and `--style activate` no longer overwrite a settings file that does not parse.

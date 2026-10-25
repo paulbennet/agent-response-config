@@ -29,17 +29,33 @@ const ok = (stdout: string) => ({
   value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
 })
 
+const USER_FILE = '/home/u/.config/response-config/config.json'
+// The engine may hand paths over in the platform's own spelling.
+const isUserFile = (p: string) => p.split('\\').join('/').endsWith('.config/response-config/config.json')
+
 // Everything beneath the mod: the engine's answers to the calls the mod makes.
-function engine(on: any, seen: { submitted?: any }) {
+// `disk` stands for the user config file: its content and mtime.
+function engine(on: any, seen: { submitted?: any; runs?: string[][] }, disk = { config: CONFIG, mtimeMs: 1 }) {
   on('session.start', (_: unknown, e: any) => ({ cwd: e.cwd }))
   on('session.id', () => ({ value: 'sess-1' }))
   on('session.root', () => ({ value: '/proj' }))
   on('store.get', () => ({ value: true })) // wizard already done
   on('command.register', () => ({ value: { command: 'response-config' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
-  on('process.run', (_: unknown, e: any) =>
-    ok(e.argv.includes('--show') ? JSON.stringify({ config: CONFIG, sources: ['defaults'], problems: [], style: 'off' }) : 'marked'),
-  )
+  on('clock.now', () => ({ value: 1_000 }))
+  on('fs.exists', (_: unknown, e: any) => ({ value: isUserFile(e.path) }))
+  on('fs.stat', (_: unknown, e: any) => {
+    return { value: { kind: 'file', size: 10, mtimeMs: disk.mtimeMs, isLink: false } }
+  })
+  on('process.run', (_: unknown, e: any) => {
+    ;(seen.runs ??= []).push(e.argv)
+    return ok(e.argv.includes('--show')
+      ? JSON.stringify({
+        config: disk.config, sources: ['defaults', 'user'], problems: [], style: 'off',
+        watch: [{ path: USER_FILE, mtimeMs: disk.mtimeMs }, { path: '/proj/.response-config.json', mtimeMs: null }],
+      })
+      : 'marked')
+  })
   on('prompt.submit', (_: unknown, e: any) => {
     seen.submitted = e
     return { text: e.text, context: e.context }
@@ -75,7 +91,7 @@ test('finished turns register items; interrupted ones do not; a quick reply reso
   engine(on, seen)
   await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
   await $.turn.complete(turn('- A1 half written', 'aborted'))
-  await $.turn.complete(turn('Done.\n- A1 Run tests\n- Q1 Keep flag? (yes/no)'))
+  await $.turn.complete(turn('Done.\n\nActions\n- A1 Run tests\nQuestions\n- Q1 Keep flag? (yes/no)'))
   await $.prompt.submit({ text: 'Q1: yes', wait: false, origin: { kind: 'composer' } })
   const hint = String(seen.submitted.context?.[0])
   expect(hint).toMatch(/User answered Q1/)
@@ -86,7 +102,7 @@ test('finished turns register items; interrupted ones do not; a quick reply reso
 test('the items pane lists open items with reply buttons, on terminal and desktop', async ($, on) => {
   engine(on, {})
   await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
-  await $.turn.complete(turn('- A1 Run tests\n- D1 Format (a) JSON (b) text'))
+  await $.turn.complete(turn('Actions\n- A1 Run tests\nDecisions\n- D1 Format (a) JSON (b) text'))
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...ITEMS, surface })
     expect((await ui.find({ type: 'Text', text: /A1: Run tests/ }))?.text).toBe('A1: Run tests')
@@ -94,4 +110,36 @@ test('the items pane lists open items with reply buttons, on terminal and deskto
     expect(await ui.find({ key: 'D1-a' })).toBeDefined()
     await ui.unmount()
   }
+})
+
+test('a config file changed on disk mid-session reaches the next prompt (review 0.1.1 N5)', async ($, on) => {
+  const seen: { submitted?: any; runs?: string[][] } = {}
+  const disk = { config: CONFIG, mtimeMs: 1 }
+  engine(on, seen, disk)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(String(seen.submitted.context?.[0])).toMatch(/brevity high/)
+  const shows = () => (seen.runs ?? []).filter(a => a.includes('--show')).length
+  const before = shows()
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(shows()).toBe(before) // nothing changed: no reload
+  disk.config = { ...CONFIG, minimal: { ...CONFIG.minimal, level: 'low' } }
+  disk.mtimeMs = 2
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(shows()).toBe(before + 1)
+  expect(String(seen.submitted.context?.[0])).toMatch(/brevity low/)
+})
+
+test('a reused ID keeps the displayed ID and the hint says so (review 0.1.1 N1)', async ($, on) => {
+  const seen: { submitted?: any } = {}
+  engine(on, seen)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
+  await $.turn.complete(turn('Actions\n- A1 Run tests'))
+  await $.prompt.submit({ text: 'done A1', wait: false, origin: { kind: 'composer' } })
+  await $.turn.complete(turn('Actions\n- A1 Deploy staging\n- A3 Tag release'))
+  await $.prompt.submit({ text: 'done A3', wait: false, origin: { kind: 'composer' } })
+  const hint = String(seen.submitted.context?.[0])
+  expect(hint).toMatch(/reused A1 for a new item/)
+  expect(hint).toMatch(/User finished A3: Tag release/)
+  expect(hint).toMatch(/Open: A1/)
 })

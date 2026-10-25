@@ -7,7 +7,7 @@ import {
 const ids = (items) => items.map((i) => `${i.type}${i.n}${i.close ? `:${i.close}` : ''}`);
 
 test('parseAssistantItems reads list items and ignores code fences', () => {
-  const text = ['Done.', '- A1 Run tests', '* **Q2:** Keep flag? (yes/no)', '3. D1 Pick (a) x (b) y', '```', '- A9 inside code', '```'].join('\n');
+  const text = ['Done.', '', 'Actions', '- A1 Run tests', '* **Q2:** Keep flag? (yes/no)', '3. D1 Pick (a) x (b) y', '```', '- A9 inside code', '```'].join('\n');
   const items = parseAssistantItems(text);
   assert.deepEqual(ids(items), ['A1', 'Q2', 'D1']);
   assert.equal(items[1].text, 'Keep flag? (yes/no)');
@@ -29,6 +29,21 @@ test('parseAssistantItems reads closing lines (review M5)', () => {
   assert.deepEqual(ids(parseAssistantItems(text)), ['A2:done', 'Q1:answered', 'S1:done', 'D2:done']);
 });
 
+test('outside a section only marked IDs count (review 0.1.1 N8)', () => {
+  const prose = ['Results:', '1. Q3 2026 revenue grew 10%', '- S3 bucket is public', '2. A4 paper is standard'].join('\n');
+  assert.deepEqual(parseAssistantItems(prose), []);
+  assert.deepEqual(ids(parseAssistantItems('Notes\n- A1: Run tests\n- **Q1** Keep it? (yes/no)')), ['A1', 'Q1']);
+  assert.deepEqual(ids(parseAssistantItems('Fixed it.\n- A2 done')), ['A2:done']);
+  assert.deepEqual(ids(parseAssistantItems('Revenue:\n1. Q3 2026 grew\n\nQuestions\n- Q1 Ship it? (yes/no)')), ['Q1']);
+});
+
+test('trailing status words close an item (review 0.1.1 N2)', () => {
+  const items = parseAssistantItems(['Actions', '- A1 Run tests (completed)', '- A2 Lint [done]', '- A3 Deploy - done', '- A4 Tag ✓', '- A5 Mark the task done', '- A6 ✓'].join('\n'));
+  assert.deepEqual(ids(items), ['A1:done', 'A2:done', 'A3:done', 'A4:done', 'A5', 'A6:done']);
+  assert.equal(items[0].text, 'Run tests');
+  assert.equal(items[4].text, 'Mark the task done');
+});
+
 test('stripFences removes fenced blocks only', () => {
   assert.equal(stripFences('a\n```js\nA1 x\n```\nb').includes('A1'), false);
 });
@@ -48,6 +63,23 @@ test('parseUserReplies does not swallow sentences or fire on prose verbs (review
   assert.deepEqual(parseUserReplies('to do A1 you need a key'), []);
   assert.deepEqual(parseUserReplies('Q1: use v2.1. Then deploy.').map((x) => x.value), ['use v2.1']);
   assert.deepEqual(parseUserReplies(`Q1: ${'x'.repeat(120)}`), []);
+});
+
+test('courtesy prefixes, postfix verbs and bare Q/D ids (review 0.1.1 N6, N7)', () => {
+  const r = (t) => parseUserReplies(t).map((x) => `${x.kind}:${x.id}`);
+  assert.deepEqual(r('please do A2'), ['do:A2']);
+  assert.deepEqual(r('ok, do A2 and A3'), ['do:A2', 'do:A3']);
+  assert.deepEqual(r('go ahead and do A1'), ['do:A1']);
+  assert.deepEqual(r('A1 done'), ['done:A1']);
+  assert.deepEqual(r('A1 is done. Q1: yes'), ['done:A1', 'answer:Q1']);
+  assert.deepEqual(r('S2, S3 skip'), ['skip:S2', 'skip:S3']);
+  assert.deepEqual(r('Q1'), ['ref:Q1']);
+  assert.deepEqual(r('A1, D2'), ['do:A1', 'ref:D2']);
+  // still prose
+  assert.deepEqual(r('to do A1 you need a key'), []);
+  assert.deepEqual(r('I will do A2 later'), []);
+  assert.deepEqual(r('A1 done by tomorrow would be great'), []);
+  assert.deepEqual(r('the A1 done flag is wrong'), []);
 });
 
 test('parseTags strips known tags only', () => {

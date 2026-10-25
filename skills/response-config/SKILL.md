@@ -27,7 +27,7 @@ node <skill-dir>/scripts/config.mjs --show
 
 `<skill-dir>` is the folder holding this file. If the command is unavailable, use these defaults: minimal on (high, 80 prose words), structured on, language off.
 
-Precedence, lowest to highest: built-in defaults, user config, project `.response-config.json`, session overrides, one-turn tags.
+Precedence, lowest to highest: built-in defaults, user config, project `.response-config.json`, session overrides (Claude mod only), one-turn tags.
 
 ## 2. Reply rules
 
@@ -56,10 +56,10 @@ Decisions
 - Omit empty sections unless `structured.showEmptySections` is true.
 - Put anything the user must notice (risk, caveat, blocked step, follow-up) in an item, not in the summary.
 - Questions state the expected answer form. Decisions list lettered options.
-- Always write items as list lines (`- A1 ...`). Bare `A1 ...` lines only count under an Actions/Suggestions/Questions/Decisions heading.
-- When you finish or settle an item, close it: `- A2 done` (or `answered`, `skipped`), or one line `Resolved: A2, Q1`.
-- The user may reply by ID: `A2` or `do A2`, `done A1`, `skip S1`, `Q1: yes`, `D3: b`. Treat each as an instruction or answer about that item. `Q1: why?` is a question about Q1, not an answer. If an ID is unknown, ask which item they mean.
-- If the hook says an ID you reused was renumbered (for example "A1 is now A5"), use the new ID from then on.
+- Always write items as list lines (`- A1 ...`) under their section heading (Actions, Suggestions, Questions, Decisions). Outside a heading only a marked ID (`- A1: ...`) counts.
+- When you finish or settle an item, close it: `- A2 done` (or `answered`, `skipped`), `- A2 <text> (done)` in a recap, or one line `Resolved: A2, Q1`.
+- The user may reply by ID: `A2` or `do A2`, `done A1` or `A1 done`, `skip S1`, `Q1: yes`, `D3: b`. Treat each as an instruction or answer about that item. `Q1: why?` is a question about Q1, and a bare `Q1` points at it; neither is an answer. If an ID is unknown, ask which item they mean.
+- If the hook says you reused an ID, the new item now owns it and the old one is dropped. Take new IDs from "Next IDs" from then on.
 - Details and edge cases: [references/format.md](references/format.md).
 
 **Language level.** Only when `language.on` is true. Apply every set field:
@@ -85,7 +85,7 @@ node <skill-dir>/scripts/config.mjs --set language.on=true --set language.cefr=B
 node <skill-dir>/scripts/config.mjs --set minimal.maxWords=60 --project
 ```
 
-`--project` writes `.response-config.json` in the current directory (shared with the repo); the default writes the user file. Keys are in [config.schema.json](config.schema.json). Tell the user what changed.
+`--project` writes the project's `.response-config.json` (the one in effect, else a new one at the git root; shared with the repo); the default writes the user file. Keys are in [config.schema.json](config.schema.json). Tell the user what changed.
 
 Valid values: `minimal.level` low|medium|high|extreme; `language.cefr` A1..C2; `language.vocabulary` basic-english|globish|ste|oxford-3000|oxford-5000|ngsl|awl; `language.readability` `{"standard":"flesch-kincaid","target":8}` with standard flesch-reading-ease|flesch-kincaid|gunning-fog|smog|coleman-liau|dale-chall.
 
@@ -119,4 +119,4 @@ node <skill-dir>/scripts/config.mjs --style activate    # sets outputStyle in se
 node <skill-dir>/scripts/config.mjs --style remove
 ```
 
-With `manage` on, every config change through the CLI, the session-start hook, or the Claude mod regenerates the file. A hand-edited style file is never overwritten; it is reported as drift until `--style sync --force`. A terminal session reads style files at startup, so a regenerated style applies from the next session.
+With `manage` on, every config change through the CLI, the session-start hook, or the Claude mod regenerates the file. Project scope always writes at the project root. A hand-edited style file is never overwritten; it is reported as drift until `--style sync --force`. A terminal session reads style files at startup, so a regenerated style applies from the next session.

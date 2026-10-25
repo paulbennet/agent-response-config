@@ -3,12 +3,12 @@
 import { atom, read } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { cli, ensureLedger, mutateLedger, refresh } from './engine'
+import { cli, ensureLedger, markActive, mutateLedger, refresh, refreshIfChanged } from './engine'
 import type { Dollar } from './engine'
 import { CONFIG_PANE, ITEMS_PANE, installUi } from './ui'
 import { firstRun, runWizard } from './wizard'
 // @ts-ignore bundled plain-JS modules without declarations
-import { applyReplies, registerItems, takeRenumbered } from '../engine/lib/core.mjs'
+import { applyReplies, registerItems, takeReused } from '../engine/lib/core.mjs'
 // @ts-ignore
 import { effectiveConfig, modeSummary, renderPromptHint, renderRules } from '../engine/lib/hint.mjs'
 // @ts-ignore
@@ -33,8 +33,7 @@ export const register: Register = on => {
   installUi(on)
 
   on('session.start', async ($, e, next) => {
-    const id = await $.session.id()
-    await cli($, ['--mod-active', id]) // classic response-config hooks stand down for this session
+    await markActive($, true) // classic response-config hooks stand down for this session
     await refresh($)
     await ensureLedger($)
     await $.command.register({
@@ -68,22 +67,24 @@ export const register: Register = on => {
   // Tags and quick replies are handled when the person sends a prompt.
   on('prompt.submit', async ($, e, next) => {
     if (e.command || e.isMeta) return next(e)
+    await markActive($)
+    await refreshIfChanged($)
     const cfg = await read($, configAtom)
     if (!cfg) return next(e)
     const parsed = cfg.overrides.inlineTags ? parseTags(e.text) : { text: e.text, tags: {} }
     const replies = cfg.structured.on ? parseUserReplies(e.text) : []
     let resolved: unknown[] = []
-    let renumbered: unknown[] = []
+    let reused: unknown[] = []
     await mutateLedger($, l => {
       l.turn += 1
       resolved = applyReplies(l, replies)
-      renumbered = takeRenumbered(l)
+      reused = takeReused(l)
     })
     const led = await ensureLedger($)
     const tagged = hasTags(parsed.tags)
     const eff = effectiveConfig(cfg, led.session.overrides, parsed.tags)
     // The full rules are already in the system prompt (prompt.compose), so only the short hint goes here.
-    const hint = renderPromptHint(eff, led, { resolved, renumbered, tags: tagged ? parsed.tags : {} })
+    const hint = renderPromptHint(eff, led, { resolved, reused, tags: tagged ? parsed.tags : {} })
     return next({
       ...e,
       // Only rewrite the text when a tag was removed; otherwise pass it through untouched.

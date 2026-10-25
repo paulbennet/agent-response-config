@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { readJsonForEdit, writeJsonAtomic } from './config.mjs';
+import { projectRoot, readJsonForEdit, writeJsonAtomic } from './config.mjs';
 import { renderRules } from './hint.mjs';
 
 export const STYLE_NAME = 'response-config-managed';
@@ -56,9 +56,11 @@ export function claudeDir(env = process.env) {
   return env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 }
 
+// Project scope is anchored at the project root, so a session started in a subfolder
+// updates the same file instead of creating another one beside it.
 export function styleDir(scope, { cwd, env = process.env } = {}) {
   return scope === 'project'
-    ? path.join(path.resolve(cwd || process.cwd()), '.claude', 'output-styles')
+    ? path.join(projectRoot(cwd, env), '.claude', 'output-styles')
     : path.join(claudeDir(env), 'output-styles');
 }
 
@@ -66,7 +68,7 @@ export const stylePath = (scope, opts) => path.join(styleDir(scope, opts), STYLE
 
 function settingsPath(scope, { cwd, env = process.env } = {}) {
   return scope === 'project'
-    ? path.join(path.resolve(cwd || process.cwd()), '.claude', 'settings.local.json')
+    ? path.join(projectRoot(cwd, env), '.claude', 'settings.local.json')
     : path.join(claudeDir(env), 'settings.json');
 }
 

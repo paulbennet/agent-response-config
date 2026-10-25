@@ -15,6 +15,14 @@ const targetAtom = atom({ plugin: 'response-config-mod', key: 'target' } as cons
 
 export type Dollar = EngineInterface
 
+type Watched = { path: string; mtimeMs: number | null }
+
+// Config files the last refresh read, with their mtimes. Module state: a reload starts it over,
+// and session.start refreshes again anyway.
+let watched: Watched[] = []
+let markedAt = 0
+const MARK_EVERY_MS = 3600 * 1000
+
 export async function cli($: Dollar, args: string[]) {
   const cwd = await $.session.root()
   return $.process.run(['node', `${$.plugin.root}/engine/config.mjs`, ...args], { cwd })
@@ -28,10 +36,41 @@ export async function refresh($: Dollar): Promise<ModConfig | null> {
     return null
   }
   const data = JSON.parse(r.stdout)
+  watched = Array.isArray(data.watch) ? data.watch : []
   await update($, configAtom, () => data.config)
   await update($, styleAtom, () => data.style as string)
   if (data.problems?.length) $.ui.toast(`response-config: ${data.problems[0]}`)
   return data.config as ModConfig
+}
+
+async function mtime($: Dollar, file: string): Promise<number | null> {
+  try {
+    // A missing file counts as null. exists() first, so a missing file never relies on a rejection.
+    return (await $.fs.exists(file)) ? (await $.fs.stat(file)).mtimeMs : null
+  } catch {
+    return null
+  }
+}
+
+// Reload when a config file changed on disk since the last refresh, for example after the agent
+// ran `config.mjs --set` in a shell. A stat per file; no process unless something changed.
+export async function refreshIfChanged($: Dollar): Promise<boolean> {
+  for (const w of watched) {
+    if ((await mtime($, w.path)) !== w.mtimeMs) {
+      await refresh($)
+      return true
+    }
+  }
+  return false
+}
+
+// Tell the classic hooks to stand down for this session. The marker expires after a day, so it
+// is rewritten at most once an hour while the session is in use.
+export async function markActive($: Dollar, force = false) {
+  const now = await $.clock.now()
+  if (!force && now - markedAt < MARK_EVERY_MS) return
+  markedAt = now
+  await cli($, ['--mod-active', await $.session.id()])
 }
 
 // Persist key=value pairs through the CLI (it validates and syncs the managed style), then reload.

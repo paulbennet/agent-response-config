@@ -28,9 +28,10 @@ Decisions
 
 - One counter per letter. Never reset, never reuse, even when an item is resolved.
 - Continue from the highest ID seen in the conversation. If a hook supplied "Next IDs: A3 S2 Q1 D1", use those.
-- One item per list line, starting `- A1 `. Text on the same line. No sub-bullets that start with an ID pattern. Bare `A1 text` lines count only directly under a section heading.
-- Re-listing an unresolved item from an earlier turn keeps its original ID; do not renumber.
-- If you reuse an ID that is closed, or give an open ID to a different item, the hook renumbers the new item and tells you the new ID on the next turn.
+- One item per list line, starting `- A1 `, under its section heading. Text on the same line. No sub-bullets that start with an ID pattern.
+- Outside a section heading only a marked ID counts (`- A1: text`, `- **A1** text`), so numbered prose such as `1. Q3 2026 revenue` is not an item.
+- Re-listing an item from an earlier turn keeps its original ID; do not renumber. A recap of a finished item may say so: `- A1 Run tests (done)`.
+- If you reuse an ID for a different item anyway, the new item takes that ID and the earlier one is no longer tracked; the hook tells you on the next turn.
 
 ## Closing items
 
@@ -39,22 +40,26 @@ When an item is finished or settled, close it so it leaves the open list:
 ```
 - A2 done
 - Q1 answered
+- A3 Update the changelog (done)
 Resolved: S1, D2
 ```
+
+A trailing `(done)`, `(completed)`, `[done]`, `- done` or `✓` closes the item too.
 
 ## Quick replies from the user
 
 | User writes | Meaning |
 |---|---|
-| `A2`, `do A2` | Carry out action (or suggestion) 2 |
-| `done A1` | Action 1 is finished; stop tracking it |
-| `skip S1`, `skip S1 S2` | Drop these items |
+| `A2`, `do A2`, `please do A2` | Carry out action (or suggestion) 2 |
+| `Q1` alone | Points at question 1; help settle it, nothing is answered yet |
+| `done A1`, `A1 done` | Action 1 is finished; stop tracking it |
+| `skip S1`, `skip S1 S2`, `S1 skip` | Drop these items |
 | `Q1: yes` | Answer to question 1 |
 | `D3: b` | Choose option b of decision 3 |
 | Several, comma separated | `Q1: yes, D2: a, skip S3` |
 | `Q1: why?` | A question about Q1, not an answer |
 
-Verbs count only at the start of the message or of a clause (`to do A1 you need...` is prose). An answer ends at `,` `;` `!` `?`, a newline or a sentence-ending period, and is at most 80 characters.
+Verbs count only at the start of the message or of a clause, optionally after `please`, `ok`, `yes` or `go ahead and` (`to do A1 you need...` is prose). The postfix form `A1 done` must end its clause. An answer ends at `,` `;` `!` `?`, a newline or a sentence-ending period, and is at most 80 characters.
 
 If a referenced ID does not exist, say so in one line and ask what they meant. After acting on a reply, do not repeat the resolved item.
 

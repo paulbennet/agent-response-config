@@ -21,7 +21,7 @@ Decisions
 - D1 Error format: (a) JSON (b) plain text
 ```
 
-Reply with `Q1: yes, D1: a, done A1, skip S2`. IDs count up per type for the whole session. The agent closes items it finished with `- A1 done` or `Resolved: A1, Q1`.
+Reply with `Q1: yes, D1: a, done A1, skip S2` (also `please do A2`, `A1 done`). IDs count up per type for the whole session. The agent closes items it finished with `- A1 done` or `Resolved: A1, Q1`.
 
 Every part has an on/off switch. Hooks, a Claude output style and a Claude mod are optional extras.
 
@@ -55,8 +55,8 @@ Files, later wins per key:
 |---|---|
 | defaults | `skills/response-config/config.default.json` |
 | user | `~/.config/response-config/config.json` (Windows: `%APPDATA%\response-config\config.json`) |
-| project | `.response-config.json` in the repo (found by walking up from the working directory) |
-| session | `/response-config on\|off\|verbose\|terse` (mod) |
+| project | `.response-config.json` in the repo (found by walking up from the working directory; `--project` edits that file, or creates one at the git root) |
+| session | `/response-config on\|off\|verbose\|terse` (Claude mod only) |
 | one turn | `!verbose`, `!plain`, `!level=B1`, `!words=40`, `!off` in your message |
 
 The JSON schema is `skills/response-config/config.schema.json`; point your editor at it with `"$schema"`.
@@ -110,14 +110,14 @@ node <skill-dir>/scripts/config.mjs --set claude.outputStyle.manage=true
 node <skill-dir>/scripts/config.mjs --style status     # in-sync | stale | drifted | missing
 ```
 
-With `manage` on, `response-config-managed.md` is created in `~/.claude/output-styles/` (or the project's `.claude/output-styles/` with `scope=project`) and regenerated whenever the config changes through the CLI, the session-start hook or the mod. A hand-edited file is never overwritten: it is reported as drift until `--style sync --force`. Switch to it with `/output-style response-config-managed` or `--style activate`.
+With `manage` on, `response-config-managed.md` is created in `~/.claude/output-styles/` (or `.claude/output-styles/` at the project root with `scope=project`) and regenerated whenever the config changes through the CLI, the session-start hook or the mod. A hand-edited file is never overwritten: it is reported as drift until `--style sync --force`. Switch to it with `/output-style response-config-managed` or `--style activate`.
 
 ## Claude mod (optional)
 
 The `response-config-mod` plugin adds, inside Claude Code:
 
 - `/response-config` with a first-run wizard, a config pane, an open-items pane with one-click replies, and a status band showing the mode and open item counts;
-- rules injected into the system prompt, tags and quick replies handled when you send;
+- rules injected into the system prompt and reloaded when a config file changes, tags and quick replies handled when you send;
 - classic hooks stand down automatically while the mod runs.
 
 The mod uses an early-access Claude Code API. It bundles a copy of the scripts under `mods/response-config-mod/engine/`; refresh it with `node tools/sync-mod.mjs`.
