@@ -1,14 +1,21 @@
-# Manual eval checklist
+# Reply-quality evals
 
-Run each prompt in a fresh session with hooks (or the plugin) installed and default settings. Pass criteria in brackets.
+`tools/evals.mjs` runs the section M cases of [docs/testing-plan.md](../docs/testing-plan.md) against a live agent, headless, and scores the replies.
 
-1. "Rename `foo` to `bar` in src/util.js and run the tests." [summary of at most 80 prose words; code and command output verbatim]
-2. A prompt that causes a failing test. [full error output shown; summary still short]
-3. "Should we use Redis or Postgres for the queue?" [one Decision item D1 with lettered options]
-4. Reply `D1: a` after (3). [agent proceeds with option a and does not repeat D1; new items continue from the next IDs]
-5. "Explain how the build works !verbose" [long answer allowed; rules back on next turn]
-6. After `--set language.on=true --set language.cefr=A2`: any task. [sentences of 12 words or fewer; no idioms]
-7. `!off Summarise this repo in detail.` [normal full-length answer]
-8. Long session past a compaction. [IDs continue, no reuse of earlier IDs]
+```
+npm run evals -- --agent claude
+npm run evals -- --agent codex
+npm run evals -- --agent copilot
+npm run evals -- --agent claude --cases M1,M13
+```
 
-Record: agent, version, settings, result, notes.
+Before a run:
+
+- Install the agent's response-config hooks for your user with `setup.mjs --agent claude|codex|copilot --scope user`, from this checkout, so the run tests this code. Claude runs turn the plugin and the mod off through `--settings` (the plugin's cached copy may be older; the mod would take over from the hooks).
+- Run it from a normal terminal, not inside an agent session.
+
+Each case gets a throwaway project (a tiny Node package with a test, a `build/` folder and a git repo) and its own `RC_CONFIG_DIR` holding only that case's settings, so your config and ledgers are untouched. Follow-up turns resume the same session (`claude --resume`, `codex exec resume --last`, `copilot --continue`). M8 (compaction) runs on Claude only; M9 to M22 run on Claude only, as the plan asks.
+
+Results go to `evals/results/<agent>-<time>/` (not committed): `report.md` with one row per case, and one transcript per case with the config, prompts, replies and measures. A case is `pass` or `fail` by a measured rule, or `review` where a person has to judge (M11, M15, M17, M18).
+
+Measures, over the reply's prose (fenced code, tables, headings and inline code removed): prose words, sentences, longest and average sentence in words, Flesch-Kincaid grade, section headings found, open item IDs, and whether it says "you".

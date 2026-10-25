@@ -56,6 +56,8 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | PARSE-7 | H13, live | `Resolved: A2 (skipped), Q2 (skipped), D1 (skipped)` closed only A2, and as done. Options written on sub-bullets under D1 were dropped. Fixed: each Resolved entry is read with its own status, and `  - (a) ...` lines are added to the D or Q item above. |
 | MOD-2 | H13, live | The items pane cut the list by item count, not rows, so items were hidden; buttons stacked; a D item without inline options had no button at all. The band `A0 S1 Q1 D1` read like item IDs. Fixed: the pane draws every item and the engine scrolls it once focused, buttons sit in a row, every Q and D has Answer, and the band reads `open A:0 S:1 Q:1 D:1`. |
 | ENGINE-1 | H13 review, live | Claude Code 2.1.310 terminal: no keyboard route from the prompt or band into a plugin pane (`ctrl+x tab` focuses the band only; `pane:next` works only inside a pane; a band press keeps the keys, so `focus` on open is refused; mouse clicks do not reach it). The mod opens panes by command, which grants the keys, and the terminal band names those commands instead of drawing buttons. Feedback for Claude Code. |
+| PARSE-8 | J4, live | `- A2 Review README.md against the repo: done.` stayed open. Fixed: a status after a colon at the end closes the item. |
+| HOOK-3 | J2, live | Copilot runs sessionStart and the first userPromptTransformed at the same moment; the prompt hook reads the ledger before session start saved it, so turn 1 carries the full rules twice. Harmless; open. |
 
 ## How to run the auto cases
 
@@ -247,7 +249,7 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H15 | `/response-config style status` and `style sync` | Manual | Pass (drift reported; sync refused; `--force` regenerated) |
 | H16 | With the plugin hooks also installed, the hooks stand down and the rules appear once | Manual | Pass (plugin and `setup.mjs` hooks both silent in mod sessions; rules from the system prompt only) |
 | H17 | Change a setting with `config.mjs --set` in a shell mid-session; the next reply follows it | Manual | Pass |
-| H18 | A session left open over an hour keeps the hooks stood down | Manual | |
+| H18 | A session left open over an hour keeps the hooks stood down | Manual | Pass (prompt at +67 min: marker refreshed, both classic hook copies silent) |
 | H19 | The same in the Claude desktop app | Manual | Pass (band, items pane and buttons work) |
 | H20 | The same in the VS Code extension | Manual | Pass (band, items pane and buttons work) |
 
@@ -263,14 +265,14 @@ npx skills add paulbennet/agent-response-config --skill response-config -a codex
 
 | ID | Check | Who |
 |---|---|---|
-| I1 | `setup.mjs --agent codex --scope user` then `/hooks` lists 3 response-config hooks | Manual |
-| I2 | After trusting them, session start adds the rules | Manual |
-| I3 | The per-prompt hint arrives; replies follow the format | Manual |
-| I4 | Stop prints `{}` and Codex shows no hook error | Manual |
-| I5 | The ledger file `codex-*.json` fills after a reply with items | Manual |
-| I6 | Project scope: `.codex/hooks.json` runs in a trusted project | Manual |
-| I7 | `--instructions` block in AGENTS.md is read | Manual |
-| I8 | The Codex VS Code extension: does it run the same hooks? | Manual |
+| I1 | `setup.mjs --agent codex --scope user` then `/hooks` lists 3 response-config hooks | Manual: pass |
+| I2 | After trusting them, session start adds the rules | Manual: pass (rules as a developer message) |
+| I3 | The per-prompt hint arrives; replies follow the format | Manual: pass (digest each prompt; `4`; A1, A2, Q1) |
+| I4 | Stop prints `{}` and Codex shows no hook error | Manual: pass (no hook errors in the session log) |
+| I5 | The ledger file `codex-*.json` fills after a reply with items | Manual: pass (quick reply resolved Q1 and A1) |
+| I6 | Project scope: `.codex/hooks.json` runs in a trusted project | Manual: pass (relative hook paths ran; user hooks removed) |
+| I7 | `--instructions` block in AGENTS.md is read | Manual: pass (one block; Codex described it). Note for M: it added a filler item "A1 explained reply rules (done)" |
+| I8 | The Codex VS Code extension: does it run the same hooks? | Manual: pass (originator `codex_vscode`; project hooks ran) |
 
 I1 also confirms the `hooks.json` wrapper shape, which nobody has checked against a live Codex. If `/hooks` lists nothing, that shape is wrong.
 
@@ -278,11 +280,11 @@ I1 also confirms the `hooks.json` wrapper shape, which nobody has checked agains
 
 | ID | Check | Who |
 |---|---|---|
-| J1 | `setup.mjs --agent copilot --scope user` writes `~/.copilot/hooks/response-config.json`; Copilot loads it | Manual |
-| J2 | `sessionStart` context reaches the model | Manual |
-| J3 | `userPromptTransformed` appends the hint, and you do not see it echoed as your own text | Manual |
-| J4 | `agentStop` reads the transcript; the `copilot-*.json` ledger fills | Manual |
-| J5 | Project hooks in `.github/hooks/` | Manual |
+| J1 | `setup.mjs --agent copilot --scope user` writes `~/.copilot/hooks/response-config.json`; Copilot loads it | Manual: pass (hooks file loaded; every hook succeeded) |
+| J2 | `sessionStart` context reaches the model | Manual: pass (`additionalContext` returned; see HOOK-3) |
+| J3 | `userPromptTransformed` appends the hint, and you do not see it echoed as your own text | Manual: pass (hint only in `transformedContent`; the shown message is as typed) |
+| J4 | `agentStop` reads the transcript; the `copilot-*.json` ledger fills | Manual: pass (quick reply resolved Q1 and A1; see PARSE-8) |
+| J5 | Project hooks in `.github/hooks/` | Manual: pass (relative paths; all three hooks succeeded) |
 | J6 | 25 or more prompts in one session: the rules still hold | Manual |
 
 ## K. Copilot in VS Code, live
@@ -291,10 +293,10 @@ Turn on the VS Code hooks preview setting first.
 
 | ID | Check | Who |
 |---|---|---|
-| K1 | `setup.mjs --agent copilot --scope project --vscode`; the hooks run, as shown in the Output panel | Manual |
-| K2 | Rules reach the model in Copilot Chat agent mode | Manual |
-| K3 | Copilot Chat finds the skill in `.agents/skills` or `.github/skills` | Manual |
-| K4 | `copilot-instructions.md` block from `--instructions` is applied | Manual |
+| K1 | `setup.mjs --agent copilot --scope project --vscode`; the hooks run, as shown in the Output panel | Manual: pass (settings `chat.useHooks` on, `.github/hooks` in `chat.hookFilesLocations`; ledger filled) |
+| K2 | Rules reach the model in Copilot Chat agent mode | Manual: pass (`4`; items A1, A2). Note for M: no Actions heading, items as `- A1:` |
+| K3 | Copilot Chat finds the skill in `.agents/skills` or `.github/skills` | Manual: pass (lists response-config) |
+| K4 | `copilot-instructions.md` block from `--instructions` is applied | Manual: pass (one block) |
 
 ## L. Distribution
 
@@ -340,6 +342,37 @@ Run each in a fresh session with default settings unless the row says otherwise.
 | M20 | `structured.showEmptySections=true` | All four headings, "none" when empty |
 | M21 | `structured.sections=["actions","questions"]` | Only those two sections |
 | M22 | `!level=A2 !words=20` in one prompt | That turn follows both; the next turn does not |
+
+Run with `npm run evals -- --agent <agent>` (`tools/evals.mjs`, see `evals/README.md`); M11, M15, M17 and M18 are judged by reading the replies.
+
+**Claude Code 2.1.310, 2026-10-25** (second run, after the fixes below): 19 pass, 3 fail.
+
+| ID | Result | Measured |
+|---|---|---|
+| M1 | Pass | 38 prose words |
+| M2 | Pass | error output shown; 41 words |
+| M3 | Pass | one D1 with (a)/(b) |
+| M4 | Pass | no repeat; new IDs A1, Q2 |
+| M5 | Pass | 470 words, then 66 |
+| M6 | Pass | 251 words |
+| M7 | Pass | build kept; confirmation handed back in full sentences |
+| M8 | Pass | A1-A3, then A4 after `/compact` |
+| M9 | Fail | low 74, medium 78, high 61, extreme 71: levels share one 80-word budget (EVAL-1) |
+| M10 | Fail | 53 words for a 30-word budget; unasked S and Q items (EVAL-2) |
+| M11 | Pass | table kept (allowed, not required); wordy cells |
+| M12 | Pass | no items or headings; 38 words |
+| M13 | Fail | longest sentence 10 words for A1's 8; average 5.7 (near) |
+| M14 | Pass | longest 13 |
+| M15 | Pass | fluent, no padding |
+| M16 | Pass | grade 2.7 |
+| M17 | Pass | active voice; longest 12 |
+| M18 | Pass | simple words |
+| M19 | Pass | says "you", point first |
+| M20 | Pass | all four headings |
+| M21 | Pass | Actions and Questions only |
+| M22 | Pass | 19 words, then 46 |
+
+First-run failures fixed: M21 extra sections (the rules now say to use only the listed sections, and the digest names only those); M10 items not counted (the budget now counts items and discourages unneeded tables or code); M2 and M7 were harness problems (PowerShell commands not allowed; the delete check). Also added: "Never add an item only to close it in the same reply" (from I7 and J4).
 
 ## N. Platforms
 

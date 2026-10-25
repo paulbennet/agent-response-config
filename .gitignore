@@ -3,3 +3,4 @@ node_modules/
 mods/*/.claude-plugin/types/
 *.log
 .DS_Store
+evals/results/

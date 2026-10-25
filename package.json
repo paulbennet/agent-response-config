@@ -12,6 +12,7 @@
     "test": "node tools/sync-mod.mjs --check && node --test \"tests/**/*.test.mjs\"",
     "validate": "claude plugin validate . && claude plugin validate mods/response-config-mod",
     "test:mod": "claude plugin test mods/response-config-mod",
-    "test:e2e": "node tools/e2e.mjs"
+    "test:e2e": "node tools/e2e.mjs",
+    "evals": "node tools/evals.mjs"
   }
 }

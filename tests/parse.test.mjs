@@ -41,6 +41,8 @@ test('a status with a note closes the item; "still open" reopens it (live G8)', 
   const again = parseAssistantItems('## Questions (Q)\n- Q1 is still open: Which framework? (name it)');
   assert.deepEqual([again[0].reopen, again[0].text], [true, 'Which framework? (name it)']);
   assert.deepEqual(ids(parseAssistantItems('## Questions\n- Q1 skipped (replaced by Q2)\n- Q2 Run A2 now? (yes/no)')), ['Q1:skipped', 'Q2']);
+  // Live J4: a status after a colon at the end.
+  assert.deepEqual(ids(parseAssistantItems('**Actions**\n- A2 Review README.md against the repo: done.\n- A3 Commit README.md only.')), ['A2:done', 'A3']);
   // A status word that does not lead with a separator is ordinary item text.
   assert.deepEqual(ids(parseAssistantItems('Actions\n- A1 Done criteria for the release')), ['A1']);
 });

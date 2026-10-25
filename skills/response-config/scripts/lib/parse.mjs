@@ -22,9 +22,9 @@ const OPTION_LINE_RE = /^\s+(?:[-*+]\s+)?(\([a-h]\)\s*\S.*)$/;
 const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';
 // An item whose whole text is a status: "- A2 done", "- Q1 (answered)", "- A3 ✓"
 const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]+)$`, 'i');
-// A recap that ends in a status: "Run tests (completed)", "Run tests [done]", "Run tests - done", "Run tests ✓"
+// A recap that ends in a status: "Run tests (completed)", "Run tests [done]", "Run tests - done", "Run tests: done.", "Run tests ✓"
 const TRAILING_CLOSE_RE = new RegExp(
-  `\\s*(?:\\((${STATUS_WORD})\\)|\\[(${STATUS_WORD})\\]|[—–-]\\s*(${STATUS_WORD})|([✓✔✅]+))\\.?\\s*$`, 'i',
+  `\\s*(?:\\((${STATUS_WORD})\\)|\\[(${STATUS_WORD})\\]|[:—–-]\\s*(${STATUS_WORD})|([✓✔✅]+))\\.?\\s*$`, 'i',
 );
 // A status with a note: "- A1 done: installed eslint", "- Q1 answered - yes", "- Q1 skipped (replaced by Q2)"
 const LEADING_CLOSE_RE = new RegExp(`^\\(?(${STATUS_WORD})\\)?\\s*(?:[:—–-]\\s*\\S|\\()`, 'i');

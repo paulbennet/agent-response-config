@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Rules: the prose budget counts the items and asks for tables or code only when needed; with fewer than four sections, the rules say to use only those, and the answer-form line and the digest name only the configured sections; "never add an item only to close it in the same reply".
+- `tools/evals.mjs` (`npm run evals`) runs the section M reply-quality cases headless against Claude Code, Codex or Copilot and scores them.
+
+- `- A2 Review the README: done.` closes A2; a status after a colon at the end of an item is a closing (PARSE-8).
 - Terminal band: the Items and Config buttons are replaced by the commands that open those panes. A band press keeps the keyboard in the band and no chord moves it into a pane, so the panes are only usable when opened by command.
 - Mod UI redesigned per surface (design canvas: response-config mod UI). Items pane: grouped by type with type colors from the theme; the terminal draws a keyboard list with a focus marker and hotkeys (d done, s skip, o do, y/n, a-h option, r answer) on the focused item; desktop and VS Code expand the focused item and reveal the other actions on hover; decision options show their labels. The band shows colored open counts with Items and Config buttons; the config pane is grouped into Replies, Language and Output style.
 - `Resolved: A2 (skipped), Q2 (answered), D1` gives each entry its own status. Before this only the first ID was read (PARSE-7).

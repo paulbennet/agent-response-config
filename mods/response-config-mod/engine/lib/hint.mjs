@@ -82,7 +82,7 @@ export function renderRules(cfg) {
     const keep = (cfg.minimal.preserve ?? []).map((k) => PRESERVE_TEXT[k]).filter(Boolean);
     lines.push('BREVITY');
     lines.push(`- ${LEVELS[cfg.minimal.level]}`);
-    lines.push(`- Prose budget: at most ${cfg.minimal.maxWords} words outside artefacts.`);
+    lines.push(`- Prose budget: at most ${cfg.minimal.maxWords} words outside artefacts, the items included. Add a table or code block only when the request needs one.`);
     if (keep.length) lines.push(`- Never shorten or alter these artefacts: ${keep.join(', ')}.`);
     lines.push(
       '- Exceptions, always full length: error messages, failing test output, security warnings, confirmations before destructive actions, and anything the user explicitly asks to have explained in detail.',
@@ -91,7 +91,9 @@ export function renderRules(cfg) {
   if (cfg.structured.on) {
     lines.push('STRUCTURE');
     lines.push('- Shape: a minimal summary of what happened, then the sections below.');
-    for (const s of cfg.structured.sections) lines.push(`  ${SECTION_LABEL[s]}`);
+    const sections = cfg.structured.sections;
+    for (const s of sections) lines.push(`  ${SECTION_LABEL[s]}`);
+    if (sections.length < 4) lines.push('- Use only these sections. What would go in another section goes in the summary.');
     lines.push(
       '- One bullet per item, written "- A1 text", under its section heading. Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.',
     );
@@ -103,8 +105,12 @@ export function renderRules(cfg) {
     lines.push(
       '- Anything the user must notice (risk, caveat, blocked step, follow-up) goes in an item, not in the summary prose.',
     );
-    lines.push('- Questions need a concrete answer form, for example "(yes/no)". Decisions list lettered options: "(a) ... (b) ...".');
-    lines.push('- When you finish or settle an item, close it with a line "- A2 done" (or answered/skipped), or "Resolved: A2, Q1".');
+    const forms = [
+      sections.includes('questions') && 'Questions need a concrete answer form, for example "(yes/no)".',
+      sections.includes('decisions') && 'Decisions list lettered options: "(a) ... (b) ...".',
+    ].filter(Boolean);
+    if (forms.length) lines.push(`- ${forms.join(' ')}`);
+    lines.push('- When you finish or settle an item, close it with a line "- A2 done" (or answered/skipped), or "Resolved: A2, Q1". Never add an item only to close it in the same reply.');
     if (cfg.structured.replyHint) {
       lines.push(
         '- The user may reply by ID: "A2" or "do A2", "done A1", "skip S1", "Q1: yes", "D3: b". Treat these as answers to those items.',
@@ -151,8 +157,13 @@ export function renderSessionHint(cfg, ledger, { notes = [] } = {}) {
 export function renderDigest(cfg) {
   if (!cfg.enabled) return '';
   const parts = [];
-  if (cfg.minimal.on) parts.push(`brevity ${cfg.minimal.level}, at most ${cfg.minimal.maxWords} prose words, artefacts verbatim, errors in full`);
-  if (cfg.structured.on) parts.push('summary then "- A1/S1/Q1/D1" items under Actions/Suggestions/Questions/Decisions headings, IDs never reused');
+  if (cfg.minimal.on) parts.push(`brevity ${cfg.minimal.level}, at most ${cfg.minimal.maxWords} prose words with the items, artefacts verbatim, errors in full`);
+  if (cfg.structured.on) {
+    const s = cfg.structured.sections;
+    const ids = s.map((x) => `${x[0].toUpperCase()}1`).join('/');
+    const heads = s.map((x) => x[0].toUpperCase() + x.slice(1)).join('/');
+    parts.push(`summary then "- ${ids}" items under ${heads} headings only, IDs never reused`);
+  }
   if (cfg.language.on) {
     const l = cfg.language;
     const bits = [l.cefr, l.readability && `${l.readability.standard} ${l.readability.target}`, l.vocabulary, l.plainLanguage && 'plain language'];
