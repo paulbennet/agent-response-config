@@ -129,7 +129,7 @@ Ledger: `<configDir>/sessions/<agent>-<sessionId>.json` = `{ counters:{A,S,Q,D},
   - claude: `{"hookSpecificOutput":{"hookEventName":..., "additionalContext": hint}}`; Stop → no output.
   - codex: same shape for SessionStart/UserPromptSubmit; Stop → `{}`.
   - copilot: sessionStart → `{"additionalContext": hint}`; `userPromptTransformed` → `{"modifiedTransformedPrompt": transformed + "\n\n" + hint}`; `agentStop` → read `transcriptPath` tail for last assistant text (best-effort, try/catch), no output.
-- `hook.mjs`: dispatch; always exit 0; never write to stderr except with `--debug`; 2s self-timeout guard; no-op when `config.enabled=false` or ledger says `modActive`.
+- `hook.mjs`: dispatch; always exit 0; never write to stderr except with `--debug`; 8s self-timeout guard (hosts allow 10s); no-op when `config.enabled=false` or ledger says `modActive`.
 - Tests: `node --test tests/` with fixture stdin for each agent/event.
 
 ### Phase 3: setup script (`scripts/setup.mjs`)

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The hook script waits up to 8 s before giving up, instead of 2.5 s. A slow Claude Code startup cut off the session-start hook (HOOK-1).
+
 Fixes from [docs/review-0.1.1.md](docs/review-0.1.1.md):
 
 - Item tracking keeps the ID the user sees: a reused ID takes over and the old item is retired, instead of shifting the new IDs.

@@ -44,6 +44,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | ID | Found by | Issue |
 |---|---|---|
 | STY-2 | `tools/e2e.mjs` | A note added after the last line of the managed style file makes it "unmanaged" instead of "drifted". The note is kept, so nothing is lost. The warning says the file "exists without provenance", which is misleading. Fix: find the provenance comment anywhere in the file and treat text after it as a hand edit. |
+| HOOK-1 | G5, live | `hook.mjs` exits after 2.5 s. On a busy Claude Code startup, SessionStart took 3.4 s (about 0.4 s normally), so it exited without printing. The first prompt sent the full rules instead, so the model still got them. Fixed: the timer is now 8 s, under the 10 s host timeouts. Retest G5. |
 
 ## How to run the auto cases
 
@@ -184,9 +185,9 @@ Use Claude Code 2.1.310 or newer in a normal terminal, not inside another Claude
 | G1 | Plugin and marketplace manifests valid | Auto, `npm run validate` | Pass |
 | G2 | The plugin's hook commands run with `CLAUDE_PLUGIN_ROOT` set | Auto, e2e PLUG-1 | Pass |
 | G3 | The shipped output style matches the rules | Auto, e2e PLUG-2 | Pass |
-| G4 | The install command in the README works | Manual | |
-| G5 | SessionStart fires and its rules reach the model | Manual | |
-| G6 | The per-prompt hint reaches the model | Manual | |
+| G4 | The install command in the README works | Manual | Pass (needed `http.sslBackend schannel` on this machine) |
+| G5 | SessionStart fires and its rules reach the model | Manual | Fail: fired, but took 3.4 s and the 2.5 s exit timer cut it off with no output (HOOK-1) |
+| G6 | The per-prompt hint reaches the model | Manual | Pass (sent the full rules, as D6 expects after a silent session start) |
 | G7 | Stop fills the ledger | Manual | |
 | G8 | Quick replies resolve items | Manual | |
 | G9 | After `/compact`, IDs continue | Manual | |

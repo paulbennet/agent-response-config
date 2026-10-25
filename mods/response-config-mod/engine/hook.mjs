@@ -110,7 +110,7 @@ export function run({ agent, event, input, env = process.env }) {
 }
 
 async function main() {
-  const timer = setTimeout(() => process.exit(0), 2500);
+  const timer = setTimeout(() => process.exit(0), 8000);
   timer.unref();
   const agent = flag('agent') ?? 'claude';
   const event = flag('event');
