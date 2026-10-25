@@ -50,6 +50,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | PARSE-3 | G8, live | The reply `Q2 ok`, without a colon, was ignored. Fixed: `Q2 ok`, `D1 b` and `Q1 yes, Q2 no` are answers when they make up a whole clause. Retest G8. |
 | PARSE-4 | G8 retest, live | The model listed `- A1 ...` and `- Q1 ...` with no section headings, so nothing was tracked; `- Resolved: A1, Q1` with a list marker was also ignored. The hook then said A1 was unknown, and the model told the user the tracker was broken. Fixed: unmarked list items count when they take the next unused ID, the list-marker form of Resolved is read, the digest names the headings, and the unknown-ID note no longer invites talk about the tracker. Retest G8. |
 | PARSE-5 | G10, live | `Resolved: A4 (replaced by A6)` was ignored because of the note, and `- D1 assumed (a), plain JavaScript` left D1 open and overwrote its question text. Fixed: a note may follow the IDs, and decided, chose, picked, assumed or going with settle a question or decision, keeping its text and storing the answer. |
+| HOOK-2 | G12, live | With the plugin and `setup.mjs` hooks both installed, both copies answered every event: the digest arrived twice, the ledger turn went up by 2 per prompt, and the plugin copy's SessionStart returned empty output. Fixed: each run claims its event by a hash of the payload, and a second copy within 10 s answers silently. Retest G12. |
 
 ## How to run the auto cases
 
@@ -197,8 +198,8 @@ Use Claude Code 2.1.310 or newer in a normal terminal, not inside another Claude
 | G8 | Quick replies resolve items | Manual | Pass after PARSE-2, PARSE-3 and PARSE-4 fixes |
 | G9 | After `/compact`, IDs continue | Manual | Pass (SessionStart:compact resent the rules; next IDs A5, D2) |
 | G10 | After `claude --resume`, open items come back | Manual | Pass (SessionStart:resume sent the open items; `A2` was understood). Ledger gaps fixed as PARSE-5 |
-| G11 | Hooks installed by `setup.mjs` instead of the plugin behave the same | Manual | |
-| G12 | Plugin and `setup.mjs` hooks both installed: does the model get the rules twice? | Manual | |
+| G11 | Hooks installed by `setup.mjs` instead of the plugin behave the same | Manual | Pass (all three hooks ran from settings.json; ledger filled) |
+| G12 | Plugin and `setup.mjs` hooks both installed: does the model get the rules twice? | Manual | Fail: twice, and the turn counted twice (HOOK-2). Fixed; retest |
 | G13 | `claude -p "list the files here"` runs the hooks too | Manual | |
 | G14 | The same in the VS Code extension | Manual | |
 

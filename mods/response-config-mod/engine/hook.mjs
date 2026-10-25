@@ -8,7 +8,7 @@ import { adapters } from './lib/adapters/index.mjs';
 import { loadConfig } from './lib/config.mjs';
 import { effectiveConfig, renderPromptHint, renderSessionHint } from './lib/hint.mjs';
 import {
-  applyReplies, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeReused,
+  applyReplies, claimEvent, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeReused,
 } from './lib/ledger.mjs';
 import { hasTags, parseAssistantItems, parseTags, parseUserReplies } from './lib/parse.mjs';
 import { driftNote, syncStyle } from './lib/style.mjs';
@@ -116,15 +116,19 @@ async function main() {
   const event = flag('event');
   if (!event) return;
   let input = {};
+  let raw = '';
   try {
-    const raw = await readStdin();
+    raw = await readStdin();
     input = raw.trim() ? JSON.parse(raw) : {};
   } catch (e) {
     log('bad stdin', e.message);
   }
   let out;
   try {
-    out = run({ agent, event, input });
+    // A second installed copy of the hooks got the same payload: answer once.
+    out = raw.trim() && !claimEvent(agent, event, raw)
+      ? adapters[agent]?.format(event, { hint: '', normalized: {} }) ?? ''
+      : run({ agent, event, input });
   } catch (e) {
     log('error', e?.stack ?? e);
     // Still answer in the shape the host requires (Codex Stop needs JSON).

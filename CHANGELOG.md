@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- When the plugin and `setup.mjs` hooks are both installed, each event is answered once. Before this the rules were added twice and the ledger counted every prompt twice (HOOK-2).
 - `Resolved: A4 (replaced by A6)` closes A4; a note after the IDs is allowed. `- D1 assumed (a)`, `- Q2 chose: no` and similar settle the item and keep its question text (PARSE-5).
 - Items listed without a section heading, such as `- A1 text`, are tracked when they take the next unused ID (PARSE-4).
 - `- Resolved: A1, Q1` with a list marker closes the items. A closing line no longer overwrites an item that is already settled, and closes a question as answered.

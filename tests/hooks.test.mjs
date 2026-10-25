@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { RULES_EVERY, run } from '../skills/response-config/scripts/hook.mjs';
@@ -135,6 +135,24 @@ test('project config overrides user config per key; invalid layers are skipped w
   assert.equal(bad.config.minimal.level, 'low');
   assert.equal(bad.problems.length, 1);
   assert.ok(validate({ nope: 1 }).length);
+});
+
+test('two installed copies answer once per event (live G12)', async () => {
+  const e = env();
+  const input = JSON.stringify({ session_id: 's', cwd: e.dir, hook_event_name: 'UserPromptSubmit', prompt: 'what is 2+2' });
+  const once = () => new Promise((resolve) => {
+    const p = spawn(process.execPath, [HOOK, '--agent', 'claude', '--event', 'prompt'], { env: e });
+    let out = '';
+    p.stdout.on('data', (d) => { out += d; });
+    p.on('close', () => resolve(out.trim()));
+    p.stdin.end(input);
+  });
+  const outs = await Promise.all([once(), once()]);
+  assert.equal(outs.filter(Boolean).length, 1, JSON.stringify(outs));
+  assert.equal(loadLedger('claude', 's', e).turn, 1);
+  // Codex Stop must still print {} from the silent copy.
+  const stop = () => spawnSync(process.execPath, [HOOK, '--agent', 'codex', '--event', 'stop'], { input: JSON.stringify({ session_id: 's', cwd: e.dir }), encoding: 'utf8', env: e }).stdout.trim();
+  assert.deepEqual([stop(), stop()], ['{}', '{}']);
 });
 
 test('CLI entry never fails, even on garbage stdin', () => {

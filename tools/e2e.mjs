@@ -64,6 +64,13 @@ const payload = {
   },
 };
 
+// Hosts never send the same payload twice (timestamps, turn ids, new prompts), and the hook
+// answers a repeated payload once, so every payload here carries a sequence number.
+let seq = 0;
+for (const events of Object.values(payload)) {
+  for (const [ev, make] of Object.entries(events)) events[ev] = (...a) => ({ ...make(...a), e2e_seq: ++seq });
+}
+
 function shapeOk(agent, event, out) {
   const t = out.trim();
   if (agent === 'codex' && event === 'stop') return assert(t === '{}', `codex stop printed ${JSON.stringify(t)}`);
@@ -137,8 +144,8 @@ const EVENT_OF = {
     for (const [event, list] of Object.entries(j.hooks)) {
       for (const h of list) {
         const ev = EVENT_OF[event];
-        const input = JSON.stringify(payload.copilot[ev](dir, 'hi', transcript));
         for (const [form, runner] of [['bash', sh], ['powershell', ps]]) {
+          const input = JSON.stringify(payload.copilot[ev](dir, 'hi', transcript));
           const r = runner(h[form], input, { env });
           assert(r.status === 0, `${event}/${form} exit ${r.status}: ${r.stderr}`);
           shapeOk('copilot', ev, r.stdout);

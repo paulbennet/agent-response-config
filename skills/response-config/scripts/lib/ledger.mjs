@@ -1,4 +1,5 @@
 // Per-session ledger of numbered items (A/S/Q/D) plus session overrides.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { configDir, readJson, writeJsonAtomic } from './config.mjs';
@@ -26,6 +27,50 @@ export function saveLedger(ledger, env = process.env) {
   writeJsonAtomic(ledgerPath(ledger.agent, ledger.sessionId, env), ledger);
 }
 
+// --- event claims: one answer per hook event when two copies are installed ---
+// The plugin and setup.mjs can both register the hooks. The host sends each copy the same
+// payload, so the first copy to claim it answers and the other stays silent.
+
+const claimsDir = (env) => path.join(configDir(env), 'claims');
+export const CLAIM_MS = 10000;
+
+export function claimEvent(agent, event, raw, env = process.env) {
+  const dir = claimsDir(env);
+  const key = crypto.createHash('sha256').update(`${agent}\0${event}\0${raw}`).digest('hex').slice(0, 32);
+  const file = path.join(dir, key);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, String(Date.now()), { flag: 'wx' });
+  } catch (e) {
+    if (e.code !== 'EEXIST') return true;
+    try {
+      if (Date.now() - fs.statSync(file).mtimeMs < CLAIM_MS) return false;
+      fs.writeFileSync(file, String(Date.now()));
+    } catch {
+      return true;
+    }
+  }
+  pruneDir(dir, CLAIM_MS * 6);
+  return true;
+}
+
+function pruneDir(dir, maxAgeMs) {
+  let names = [];
+  try {
+    names = fs.readdirSync(dir);
+  } catch {
+    return;
+  }
+  for (const n of names) {
+    try {
+      const f = path.join(dir, n);
+      if (Date.now() - fs.statSync(f).mtimeMs > maxAgeMs) fs.unlinkSync(f);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 // --- mod-active marker: the Claude mod writes it so classic hooks stand down ---
 // It expires after a day so a session resumed without the mod gets its hooks back; the mod
 // rewrites it at session start and then at most every hour while prompts arrive.
@@ -42,22 +87,7 @@ export function markModActive(sessionId, env = process.env) {
 }
 
 export function pruneOld(days = 30, env = process.env) {
-  for (const dir of [path.join(configDir(env), 'sessions'), modDir(env)]) {
-    let names = [];
-    try {
-      names = fs.readdirSync(dir);
-    } catch {
-      continue;
-    }
-    for (const n of names) {
-      try {
-        const f = path.join(dir, n);
-        if (Date.now() - fs.statSync(f).mtimeMs > days * 86400000) fs.unlinkSync(f);
-      } catch {
-        /* ignore */
-      }
-    }
-  }
+  for (const dir of [path.join(configDir(env), 'sessions'), modDir(env)]) pruneDir(dir, days * 86400000);
 }
 
 export const sessionsDir = (env = process.env) => path.join(configDir(env), 'sessions');
