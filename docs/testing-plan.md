@@ -52,7 +52,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | PARSE-5 | G10, live | `Resolved: A4 (replaced by A6)` was ignored because of the note, and `- D1 assumed (a), plain JavaScript` left D1 open and overwrote its question text. Fixed: a note may follow the IDs, and decided, chose, picked, assumed or going with settle a question or decision, keeping its text and storing the answer. |
 | HOOK-2 | G12, live | With the plugin and `setup.mjs` hooks both installed, both copies answered every event: the digest arrived twice, the ledger turn went up by 2 per prompt, and the plugin copy's SessionStart returned empty output. Fixed: each run claims its event by a hash of the payload, and a second copy within 10 s answers silently. Retest G12. |
 | PARSE-6 | G14, live | `- Q1 skipped (replaced by Q2)` was read as a new Q1 and retired the real one. Fixed: a status followed by a note in brackets closes the item. |
-| MOD-1 | H8, live | With the response-config plugin installed, the mod's `$.command.register({ name: 'response-config' })` was refused ("it is the plugin's /response-config:response-config"). session.start threw, so the wizard never showed. Fixed: the command is registered last, falls back to `/response-config-mod`, and a toast names it; messages use the registered name. Mod test added; `tsc` passes. Retest H8, H9. |
+| MOD-1 | H8, live | With the response-config plugin installed, the mod's `$.command.register({ name: 'response-config' })` was refused ("it is the plugin's /response-config:response-config"). session.start threw, so the wizard never showed. Fixed: the command is registered last, falls back to `/response-config-mod`, and a toast names it once; the expected refusal is no longer logged to the transcript; messages use the registered name. Mod test added; `tsc` passes. Retest H8, H9. |
 
 ## How to run the auto cases
 
@@ -234,9 +234,9 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H5 | Finished turns register items; interrupted ones do not; quick replies resolve | Auto, mod test | Pass |
 | H6 | Items pane shows items and buttons on terminal and desktop | Auto, mod test | Pass |
 | H7 | A config file changed on disk reaches the next prompt; reused IDs are announced | Auto, mod tests | Pass |
-| H8 | The mod loads with no error line in the transcript | Manual | Fail: session.start threw on the `/response-config` name (MOD-1). Fixed; retest |
-| H9 | First-run wizard appears; Later and Never ask behave | Manual | |
-| H10 | `/response-config` shows the mode | Manual | |
+| H8 | The mod loads with no error line in the transcript | Manual | Pass after the MOD-1 fix (no errors; `/response-config-mod` registered and named in a toast) |
+| H9 | First-run wizard appears; Later and Never ask behave | Manual | Pass (Later: shown again next start; Never ask: not shown again) |
+| H10 | `/response-config` shows the mode | Manual | Pass, as `/response-config-mod` with the plugin installed |
 | H11 | `on`, `off`, `verbose`, `terse`, `reset` change the next reply | Manual | |
 | H12 | `/response-config pane`: edits save to the config file and the style syncs | Manual | |
 | H13 | `/response-config items`: Do, Done, Skip, Yes, No, option and Answer buttons send the right reply | Manual | |

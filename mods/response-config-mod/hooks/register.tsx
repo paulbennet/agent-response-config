@@ -39,7 +39,11 @@ export const register: Register = on => {
     await refresh($)
     await ensureLedger($)
     const name = await registerCommand($)
-    if (name && name !== COMMANDS[0]) $.ui.toast(`/${COMMANDS[0]} is taken by the response-config plugin's skill; use /${name}.`)
+    // Said once, not every session.
+    if (name && name !== COMMANDS[0] && (await $.store.get('commandNotice')) !== name) {
+      $.ui.toast(`/${COMMANDS[0]} is taken by the response-config plugin's skill; use /${name}.`)
+      await $.store.set('commandNotice', name)
+    }
     if ((await read($, styleAtom)) === 'drifted') {
       $.ui.toast(`Managed output style was hand-edited. /${commandName()} style sync --force regenerates it.`)
     }

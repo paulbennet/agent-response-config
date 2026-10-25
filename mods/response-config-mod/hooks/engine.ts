@@ -29,7 +29,10 @@ export const COMMANDS = ['response-config', 'response-config-mod'] as const
 let command: string = COMMANDS[0]
 export const commandName = () => command
 
+// A refused name is the expected case with the plugin installed, so it is logged only when
+// every name is refused.
 export async function registerCommand($: Dollar): Promise<string | null> {
+  const errors: string[] = []
   for (const name of COMMANDS) {
     try {
       await $.command.register({
@@ -40,9 +43,10 @@ export async function registerCommand($: Dollar): Promise<string | null> {
       command = name
       return name
     } catch (err) {
-      $.ui.log(`/${name} not registered: ${String(err).slice(0, 200)}`)
+      errors.push(`/${name}: ${String(err).slice(0, 200)}`)
     }
   }
+  $.ui.log(`no slash command registered. ${errors.join(' ')}`)
   return null
 }
 
