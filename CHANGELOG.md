@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The mod starts when the response-config plugin is also installed. Its skill takes `/response-config`, which made the mod's session start fail before the wizard. The mod now registers its command last and falls back to `/response-config-mod` (MOD-1).
 - `- Q1 skipped (replaced by Q2)` closes Q1; a status followed by a note in brackets is a closing line (PARSE-6).
 - When the plugin and `setup.mjs` hooks are both installed, each event is answered once. Before this the rules were added twice and the ledger counted every prompt twice (HOOK-2).
 - `Resolved: A4 (replaced by A6)` closes A4; a note after the IDs is allowed. `- D1 assumed (a)`, `- Q2 chose: no` and similar settle the item and keep its question text (PARSE-5).

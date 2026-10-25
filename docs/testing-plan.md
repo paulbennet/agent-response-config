@@ -52,6 +52,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | PARSE-5 | G10, live | `Resolved: A4 (replaced by A6)` was ignored because of the note, and `- D1 assumed (a), plain JavaScript` left D1 open and overwrote its question text. Fixed: a note may follow the IDs, and decided, chose, picked, assumed or going with settle a question or decision, keeping its text and storing the answer. |
 | HOOK-2 | G12, live | With the plugin and `setup.mjs` hooks both installed, both copies answered every event: the digest arrived twice, the ledger turn went up by 2 per prompt, and the plugin copy's SessionStart returned empty output. Fixed: each run claims its event by a hash of the payload, and a second copy within 10 s answers silently. Retest G12. |
 | PARSE-6 | G14, live | `- Q1 skipped (replaced by Q2)` was read as a new Q1 and retired the real one. Fixed: a status followed by a note in brackets closes the item. |
+| MOD-1 | H8, live | With the response-config plugin installed, the mod's `$.command.register({ name: 'response-config' })` was refused ("it is the plugin's /response-config:response-config"). session.start threw, so the wizard never showed. Fixed: the command is registered last, falls back to `/response-config-mod`, and a toast names it; messages use the registered name. Mod test added; `tsc` passes. Retest H8, H9. |
 
 ## How to run the auto cases
 
@@ -171,9 +172,9 @@ All auto, in `npm test` and `npm run test:e2e`. All pass.
 | F7 | Project scope writes at the project root from any subfolder | Auto | Pass |
 | F8 | `--style activate` sets `outputStyle` and refuses a broken settings file | Auto | Pass |
 | F9 | `--style remove` deletes only a file it made | Auto | Pass |
-| F10 | `/output-style` in Claude Code lists `response-config-managed` after a restart | Manual | |
-| F11 | Picking it changes replies in the next session | Manual | |
-| F12 | The plugin's shipped `response-config` style is listed and works | Manual | |
+| F10 | `/output-style` in Claude Code lists `response-config-managed` after a restart | Manual | Pass (listed with the plugin style `response-config:response-config`) |
+| F11 | Picking it changes replies in the next session | Manual | Pass (structured reply from the style alone, hooks off) |
+| F12 | The plugin's shipped `response-config` style is listed and works | Manual | Pass (listed as `response-config:response-config`; structured reply with no hooks) |
 
 **F10 to F12 steps.**
 
@@ -233,7 +234,7 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H5 | Finished turns register items; interrupted ones do not; quick replies resolve | Auto, mod test | Pass |
 | H6 | Items pane shows items and buttons on terminal and desktop | Auto, mod test | Pass |
 | H7 | A config file changed on disk reaches the next prompt; reused IDs are announced | Auto, mod tests | Pass |
-| H8 | The mod loads with no error line in the transcript | Manual | |
+| H8 | The mod loads with no error line in the transcript | Manual | Fail: session.start threw on the `/response-config` name (MOD-1). Fixed; retest |
 | H9 | First-run wizard appears; Later and Never ask behave | Manual | |
 | H10 | `/response-config` shows the mode | Manual | |
 | H11 | `on`, `off`, `verbose`, `terse`, `reset` change the next reply | Manual | |

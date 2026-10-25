@@ -1,5 +1,5 @@
 // First-run / on-demand setup wizard built on $.ui.ask dialogs (works on every surface).
-import { cli, refresh, save } from './engine'
+import { cli, commandName, refresh, save } from './engine'
 import type { Dollar } from './engine'
 
 const LEVELS = ['low', 'medium', 'high', 'extreme']
@@ -68,7 +68,7 @@ export async function runWizard($: Dollar): Promise<boolean> {
     $.ui.log(res.stdout.trim())
   }
   await refresh($)
-  $.ui.toast('All set. /response-config opens the panel any time.')
+  $.ui.toast(`All set. /${commandName()} pane opens the panel any time.`)
   return true
 }
 

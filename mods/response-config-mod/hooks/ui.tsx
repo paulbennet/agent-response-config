@@ -4,7 +4,7 @@ import type { On } from 'claude-code'
 
 import { runWizard } from './wizard'
 import {
-  cli, refresh, save,
+  cli, commandName, refresh, save,
 } from './engine'
 // @ts-ignore bundled plain-JS modules without declarations
 import { effectiveConfig, modeSummary } from '../engine/lib/hint.mjs'
@@ -55,7 +55,7 @@ export function installUi(on: On) {
     const els = $.ui.resolve(e)
     const { Box, Button, Text } = els
     if (!('Input' in els) || !('Select' in els)) {
-      return <Text>This surface has no form controls. Use /response-config on|off|verbose|terse|style.</Text>
+      return <Text>This surface has no form controls. Use /{commandName()} on|off|verbose|terse|style.</Text>
     }
     const { Input, Select } = els
     const cfg = await read($, configAtom)

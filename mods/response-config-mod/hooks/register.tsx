@@ -3,7 +3,9 @@
 import { atom, read } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { cli, ensureLedger, markActive, mutateLedger, refresh, refreshIfChanged } from './engine'
+import {
+  COMMANDS, cli, commandName, ensureLedger, markActive, mutateLedger, refresh, refreshIfChanged, registerCommand,
+} from './engine'
 import type { Dollar } from './engine'
 import { CONFIG_PANE, ITEMS_PANE, installUi } from './ui'
 import { firstRun, runWizard } from './wizard'
@@ -36,13 +38,10 @@ export const register: Register = on => {
     await markActive($, true) // classic response-config hooks stand down for this session
     await refresh($)
     await ensureLedger($)
-    await $.command.register({
-      name: 'response-config',
-      description: 'Configure terse, structured, level-controlled replies',
-      argumentHint: '[on|off|verbose|terse|reset|wizard|pane|items|style sync|activate|status]',
-    })
+    const name = await registerCommand($)
+    if (name && name !== COMMANDS[0]) $.ui.toast(`/${COMMANDS[0]} is taken by the response-config plugin's skill; use /${name}.`)
     if ((await read($, styleAtom)) === 'drifted') {
-      $.ui.toast('Managed output style was hand-edited. /response-config style sync --force regenerates it.')
+      $.ui.toast(`Managed output style was hand-edited. /${commandName()} style sync --force regenerates it.`)
     }
     if (e.isInteractive && e.surface !== null && !(await $.store.get('wizardDone'))) {
       void (async () => {
@@ -103,45 +102,47 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('command.run', { command: 'response-config' }, async ($, e) => {
-    const [sub = 'status', ...rest] = e.args.trim().split(/\s+/)
-    switch (sub) {
-      case 'on':
-      case 'off':
-        await setOverride($, { enabled: sub === 'on' })
-        return { text: `response-config ${sub} for this session.` }
-      case 'verbose':
-        await setOverride($, { minimal: { on: false } })
-        return { text: 'Minimal mode off for this session.' }
-      case 'terse':
-        await setOverride($, { minimal: { on: true } })
-        return { text: 'Minimal mode on for this session.' }
-      case 'reset':
-        await setOverride($, null)
-        return { text: 'Session overrides cleared.' }
-      case 'wizard':
-        void runWizard($)
-        return { text: 'Wizard started.' }
-      case 'pane':
-        await $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true })
-        return { text: 'Config pane opened.' }
-      case 'items':
-        await $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true })
-        return { text: 'Items pane opened.' }
-      case 'style': {
-        const action = rest[0] ?? 'status'
-        if (!['status', 'sync', 'activate', 'remove'].includes(action)) return { text: 'Use: style status|sync|activate|remove [--force]' }
-        const r = await cli($, ['--style', action, ...rest.slice(1).filter(a => a === '--force')])
-        await refresh($)
-        return { text: (r.stdout || r.stderr).trim() }
-      }
-      default: {
-        await refresh($)
-        const cfg = await read($, configAtom)
-        const eff = cfg ? effectiveConfig(cfg, await overrides($)) : null
-        return { text: eff ? `response-config: ${modeSummary(eff)}` : 'response-config: config not loaded.' }
-      }
-    }
-  })
+  on('command.run', { command: 'response-config' }, ($, e) => runCommand($, e.args))
+  on('command.run', { command: 'response-config-mod' }, ($, e) => runCommand($, e.args))
 }
 
+async function runCommand($: Dollar, args: string): Promise<{ text: string }> {
+  const [sub = 'status', ...rest] = args.trim().split(/\s+/)
+  switch (sub) {
+    case 'on':
+    case 'off':
+      await setOverride($, { enabled: sub === 'on' })
+      return { text: `response-config ${sub} for this session.` }
+    case 'verbose':
+      await setOverride($, { minimal: { on: false } })
+      return { text: 'Minimal mode off for this session.' }
+    case 'terse':
+      await setOverride($, { minimal: { on: true } })
+      return { text: 'Minimal mode on for this session.' }
+    case 'reset':
+      await setOverride($, null)
+      return { text: 'Session overrides cleared.' }
+    case 'wizard':
+      void runWizard($)
+      return { text: 'Wizard started.' }
+    case 'pane':
+      await $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true })
+      return { text: 'Config pane opened.' }
+    case 'items':
+      await $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true })
+      return { text: 'Items pane opened.' }
+    case 'style': {
+      const action = rest[0] ?? 'status'
+      if (!['status', 'sync', 'activate', 'remove'].includes(action)) return { text: 'Use: style status|sync|activate|remove [--force]' }
+      const r = await cli($, ['--style', action, ...rest.slice(1).filter(a => a === '--force')])
+      await refresh($)
+      return { text: (r.stdout || r.stderr).trim() }
+    }
+    default: {
+      await refresh($)
+      const cfg = await read($, configAtom)
+      const eff = cfg ? effectiveConfig(cfg, await overrides($)) : null
+      return { text: eff ? `response-config: ${modeSummary(eff)}` : 'response-config: config not loaded.' }
+    }
+  }
+}

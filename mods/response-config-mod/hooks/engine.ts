@@ -23,6 +23,29 @@ let watched: Watched[] = []
 let markedAt = 0
 const MARK_EVERY_MS = 3600 * 1000
 
+// The slash command's name. The response-config plugin's skill takes /response-config when both
+// are installed, and the engine refuses a taken name, so the mod falls back to the next one.
+export const COMMANDS = ['response-config', 'response-config-mod'] as const
+let command: string = COMMANDS[0]
+export const commandName = () => command
+
+export async function registerCommand($: Dollar): Promise<string | null> {
+  for (const name of COMMANDS) {
+    try {
+      await $.command.register({
+        name,
+        description: 'Configure terse, structured, level-controlled replies',
+        argumentHint: '[on|off|verbose|terse|reset|wizard|pane|items|style sync|activate|status]',
+      })
+      command = name
+      return name
+    } catch (err) {
+      $.ui.log(`/${name} not registered: ${String(err).slice(0, 200)}`)
+    }
+  }
+  return null
+}
+
 export async function cli($: Dollar, args: string[]) {
   const cwd = await $.session.root()
   return $.process.run(['node', `${$.plugin.root}/engine/config.mjs`, ...args], { cwd })

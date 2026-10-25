@@ -35,12 +35,15 @@ const isUserFile = (p: string) => p.split('\\').join('/').endsWith('.config/resp
 
 // Everything beneath the mod: the engine's answers to the calls the mod makes.
 // `disk` stands for the user config file: its content and mtime.
-function engine(on: any, seen: { submitted?: any; runs?: string[][] }, disk = { config: CONFIG, mtimeMs: 1 }) {
+function engine(on: any, seen: { submitted?: any; runs?: string[][]; taken?: string[] }, disk = { config: CONFIG, mtimeMs: 1 }) {
   on('session.start', (_: unknown, e: any) => ({ cwd: e.cwd }))
   on('session.id', () => ({ value: 'sess-1' }))
   on('session.root', () => ({ value: '/proj' }))
   on('store.get', () => ({ value: true })) // wizard already done
-  on('command.register', () => ({ value: { command: 'response-config' } }))
+  on('command.register', (_: unknown, e: any) => {
+    if (seen.taken?.includes(e.name)) throw new Error(`"/${e.name}" refused: it is the plugin's /${e.name}:${e.name}`)
+    return { value: { command: e.name } }
+  })
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('clock.now', () => ({ value: 1_000 }))
   on('fs.exists', (_: unknown, e: any) => ({ value: isUserFile(e.path) }))
@@ -142,4 +145,14 @@ test('a reused ID keeps the displayed ID and the hint says so (review 0.1.1 N1)'
   expect(hint).toMatch(/reused A1 for a new item/)
   expect(hint).toMatch(/User finished A3: Tag release/)
   expect(hint).toMatch(/Open: A1/)
+})
+
+test('/response-config taken by the plugin skill: the mod serves /response-config-mod and still starts (live H8)', async ($, on) => {
+  const seen: { submitted?: any; taken?: string[] } = { taken: ['response-config'] }
+  engine(on, seen)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
+  const { text } = await $.command.run({ command: 'response-config-mod', args: '' })
+  expect(text).toMatch(/^response-config: /)
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(String(seen.submitted.context?.[0])).toMatch(/\[response-config\]/)
 })
