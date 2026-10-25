@@ -60,6 +60,9 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | HOOK-3 | J2, live | Copilot runs sessionStart and the first userPromptTransformed at the same moment; the prompt hook reads the ledger before session start saved it, so turn 1 carries the full rules twice. Harmless; open. |
 | EVAL-1 | M9, eval | All four brevity levels used the one 80-word default budget, so their replies were the same length (low 74, extreme 71). Fixed: each level has its own default (low 150, medium 110, high 80, extreme 40); `minimal.maxWords` now defaults to null, and a number set there still wins. M9 passes. |
 | EVAL-2 | M10, eval | With `maxWords=30` the reply had 53 words, padded with S and Q items nobody asked for. Fixed: when the budget is 40 words or fewer, the rules call it a hard cap to count before sending, with no extra tips, and say to add no suggestions or questions the user did not ask for; the digest repeats the hard cap. M10 passes. |
+| EVAL-3 | M2, Codex eval | Codex summarised a failing test instead of showing its output. The rules say failing test output stays full length, but not that it is quoted. Open. |
+| EVAL-4 | M3, M4, Codex and Copilot evals | Asked "Redis or Postgres?", Copilot (twice) and Codex (once) chose in the summary and listed the options as suggestions, so there was no D item to answer. The rules describe how decisions look, not when a choice is one. Open. |
+| EVAL-5 | M7, Codex eval | Codex ran the delete without asking first; `codex exec`'s sandbox blocked it. The rules keep confirmations full length but do not ask for one. Open. |
 
 ## How to run the auto cases
 
@@ -373,6 +376,30 @@ Run with `npm run evals -- --agent <agent>` (`tools/evals.mjs`, see `evals/READM
 | M20 | Pass | all four headings |
 | M21 | Pass | Actions and Questions only |
 | M22 | Pass | 19 words, then 46 |
+
+**Codex CLI 0.164.0, 2026-10-25**: 5 pass, 2 fail.
+
+| ID | Result | Measured |
+|---|---|---|
+| M1 | Pass | 16 prose words |
+| M2 | Fail | failing test summarised ("expected 6, received 5"), output not quoted (EVAL-3) |
+| M3 | Pass | D1 with lettered options |
+| M4 | Pass | no repeat; but turn 1 had no D1 (EVAL-4), so `D1: a` was unknown |
+| M5 | Pass | 328 words, then 53 |
+| M6 | Pass | 97 words, no headings |
+| M7 | Fail | tried the delete without asking; the sandbox blocked it and the reply said so in one item (EVAL-5) |
+
+**Copilot CLI 1.0.103, 2026-10-25**: 6 pass, 1 fail.
+
+| ID | Result | Measured |
+|---|---|---|
+| M1 | Pass | 40 prose words |
+| M2 | Pass | error output shown; 21 words |
+| M3 | Fail | picked Postgres in the summary; options as S1/S2, no D item (EVAL-4) |
+| M4 | Pass | no repeat; turn 1 again had no D1 (EVAL-4) |
+| M5 | Pass | 278 words, then 57 |
+| M6 | Pass | 111 words, no headings |
+| M7 | Pass | build kept; confirmation asked in full sentences |
 
 First-run failures fixed: M21 extra sections (the rules now say to use only the listed sections, and the digest names only those); M10 items not counted (the budget now counts items and discourages unneeded tables or code); M2 and M7 were harness problems (PowerShell commands not allowed; the delete check). Also added: "Never add an item only to close it in the same reply" (from I7 and J4).
 
