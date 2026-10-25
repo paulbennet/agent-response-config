@@ -359,8 +359,8 @@ Run with `npm run evals -- --agent <agent>` (`tools/evals.mjs`, see `evals/READM
 | M6 | Pass | 251 words |
 | M7 | Pass | build kept; confirmation handed back in full sentences |
 | M8 | Pass | A1-A3, then A4 after `/compact` |
-| M9 | Fail, fixed | low 74, medium 78, high 61, extreme 71: levels share one 80-word budget (EVAL-1); rerun |
-| M10 | Fail, fixed | 53 words for a 30-word budget; unasked S and Q items (EVAL-2); rerun |
+| M9 | Pass (rerun) | first run low 74, medium 78, high 61, extreme 71 (EVAL-1); after the fix 118 → 96 → 78 → 33 |
+| M10 | Fail (rerun) | first run 53 words with unasked S and Q items (EVAL-2); after the fix 42 words, no items, still over 30 |
 | M11 | Pass | table kept (allowed, not required); wordy cells |
 | M12 | Pass | no items or headings; 38 words |
 | M13 | Fail | longest sentence 10 words for A1's 8; average 5.7 (near) |
