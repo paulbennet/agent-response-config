@@ -56,6 +56,18 @@ test('replay of live G8: closings with notes and "still open" do not retire IDs'
   assert.deepEqual(l.reused, []);
 });
 
+test('replay of live G8 retest: items without headings are tracked', () => {
+  const e = env();
+  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
+  const prompt = (p) => JSON.parse(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: p }, env: e })).hookSpecificOutput.additionalContext;
+  stop('Here is a plan.\n\n- A1 Install ESLint\n- A2 Add the scripts\n- A3 Run `npm run lint`\n\n- Q1 Set up Prettier too? (yes/no)');
+  const hint = prompt('Q1: yes, done A1');
+  assert.doesNotMatch(hint, /User referenced/);
+  stop('Marked.\n\n- Resolved: A1, Q1\n- A2 Add the scripts\n- A3 Run it\n- A4 Install Prettier');
+  const l = loadLedger('claude', 's', e);
+  assert.deepEqual(Object.fromEntries(l.items.map((i) => [i.id, i.status])), { A1: 'done', A2: 'open', A3: 'open', Q1: 'answered', A4: 'open' });
+});
+
 test('codex stop prints {} and copilot formats per event', () => {
   const e = env();
   assert.equal(run({ agent: 'codex', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: 'x' }, env: e }), '{}');

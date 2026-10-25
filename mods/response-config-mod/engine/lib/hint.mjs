@@ -152,7 +152,7 @@ export function renderDigest(cfg) {
   if (!cfg.enabled) return '';
   const parts = [];
   if (cfg.minimal.on) parts.push(`brevity ${cfg.minimal.level}, at most ${cfg.minimal.maxWords} prose words, artefacts verbatim, errors in full`);
-  if (cfg.structured.on) parts.push('summary then "- A1/S1/Q1/D1" items, IDs never reused');
+  if (cfg.structured.on) parts.push('summary then "- A1/S1/Q1/D1" items under Actions/Suggestions/Questions/Decisions headings, IDs never reused');
   if (cfg.language.on) {
     const l = cfg.language;
     const bits = [l.cefr, l.readability && `${l.readability.standard} ${l.readability.target}`, l.vocabulary, l.plainLanguage && 'plain language'];
@@ -181,7 +181,7 @@ export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, proble
       lines.push(`Your last reply reused ${r.id} for a new item; the earlier ${r.id} (${r.text}) is no longer tracked. Never reuse IDs: take new ones from "Next IDs".`);
     }
     for (const r of resolved.slice(0, 6)) {
-      if (r.unknown) lines.push(`User referenced ${r.id}, which is not tracked; ask which item they mean.`);
+      if (r.unknown) lines.push(`User referenced ${r.id}. If it is in your earlier replies, act on it; otherwise ask which item they mean. Do not mention this note.`);
       else if (r.kind === 'answer') lines.push(`User answered ${r.id} (${r.text}): "${r.value}".`);
       else if (r.kind === 'ref' && !r.value) lines.push(`User pointed at ${r.id} (${r.text}); help them settle it.`);
       else if (r.kind === 'ref') lines.push(`User asked about ${r.id} (${r.text}): "${r.value}?"`);

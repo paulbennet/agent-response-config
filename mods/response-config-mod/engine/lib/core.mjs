@@ -58,6 +58,8 @@ export function sameItem(a, b) {
 //   `superseded` under `A1~1` (out of ID lookup) and queued in `reused` for the next hint.
 // - Entries with `close` mark an existing item done/answered/skipped.
 // - Entries with `reopen` ("A1 still open: ...") set an existing item back to open.
+// - `loose` entries (an unmarked "- A1 text" outside a section) count only as the next unused
+//   ID of their type, or as a recap of an existing item; anything else is taken for prose.
 export function registerItems(ledger, parsed) {
   normalizeLedger(ledger);
   const added = [];
@@ -65,13 +67,15 @@ export function registerItems(ledger, parsed) {
     const id = `${p.type}${p.n}`;
     const existing = ledger.items.find((i) => i.id === id);
     if (p.close) {
-      if (existing) existing.status = p.close;
+      // A closing line never overwrites a settled status; a settled question is "answered".
+      if (existing && isOpen(existing)) existing.status = p.close === 'done' && 'QD'.includes(p.type) ? 'answered' : p.close;
       continue;
     }
     if (p.reopen && existing) {
       existing.status = 'open';
       continue;
     }
+    if (p.loose && (existing ? !sameItem(existing.text, p.text) : p.n !== ledger.counters[p.type] + 1)) continue;
     if (existing && sameItem(existing.text, p.text)) {
       if (isOpen(existing)) existing.text = p.text;
       continue;

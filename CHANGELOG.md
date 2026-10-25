@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Items listed without a section heading, such as `- A1 text`, are tracked when they take the next unused ID (PARSE-4).
+- `- Resolved: A1, Q1` with a list marker closes the items. A closing line no longer overwrites an item that is already settled, and closes a question as answered.
+- The per-prompt digest names the section headings. The note about an unknown ID no longer prompts the model to talk about the tracker.
 - A closing line with a note, such as `- A1 done: installed eslint` or `- Q1 answered: yes`, now closes the item. Before this it was read as a new item with the same ID, which retired the old one (PARSE-2).
 - `- A1 still open: ...` sets the item back to open instead of replacing it.
 - Short answers without a colon, such as `Q2 ok`, `D1 b` or `Q1 yes, Q2 no`, are recognised (PARSE-3).

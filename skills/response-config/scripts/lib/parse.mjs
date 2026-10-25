@@ -14,7 +14,7 @@ const LIST_LINE_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
 // "Actions", "## Questions (Q)", "**Decisions (D):**"; the rules name the headings with their letter.
 const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)(?:\s*\([ASQD]\))?\**\s*:?\s*\**\s*$/i;
 // "Resolved: A2, Q1" / "Done: A1" / "Closed: S3"
-const RESOLVED_RE = /^\s*\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)\s*$/i;
+const RESOLVED_RE = /^\s*(?:[-*+]\s+)?\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)\s*$/i;
 const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';
 // An item whose whole text is a status: "- A2 done", "- Q1 (answered)", "- A3 ✓"
 const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]+)$`, 'i');
@@ -34,9 +34,10 @@ const CLOSE_STATUS = {
 const closeStatus = (word) => (word ? CLOSE_STATUS[word.toLowerCase()] : 'done');
 
 // Items count when they sit under an Actions/Suggestions/Questions/Decisions heading. Outside
-// a section only a marked ID counts ("- A1: text", "- **A1** text"), so numbered prose such as
-// "1. Q3 2026 revenue grew" or "- S3 bucket is public" is not taken for an item.
-// Closing lines ("- A2 done", "Resolved: A2") count anywhere.
+// a section a marked ID counts ("- A1: text", "- **A1** text"); an unmarked list item
+// ("- A1 text") comes back as `loose`, and registerItems takes it only when it is the next
+// unused ID, so numbered prose such as "1. Q3 2026 revenue grew" or "- S3 bucket is public"
+// is not taken for an item. Closing lines ("- A2 done", "Resolved: A2") count anywhere.
 export function parseAssistantItems(text) {
   const items = [];
   let inSection = false;
@@ -68,10 +69,14 @@ export function parseAssistantItems(text) {
       items.push({ type, n, text: '', close: closeStatus(leading[1]) });
       continue;
     }
-    if (!inSection && !bold && !sep) continue;
+    const loose = !inSection && !bold && !sep;
     const still = STILL_OPEN_RE.exec(body);
     if (still) {
       items.push({ type, n, text: still[1].trim(), reopen: true });
+      continue;
+    }
+    if (loose) {
+      items.push({ type, n, text: body, loose: true });
       continue;
     }
     const tail = TRAILING_CLOSE_RE.exec(body);

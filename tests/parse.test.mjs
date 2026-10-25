@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   parseAssistantItems, parseTags, parseUserReplies, stripFences,
 } from '../skills/response-config/scripts/lib/parse.mjs';
+import { emptyLedger, registerItems } from '../skills/response-config/scripts/lib/core.mjs';
 
 const ids = (items) => items.map((i) => `${i.type}${i.n}${i.close ? `:${i.close}` : ''}`);
 
@@ -56,12 +57,23 @@ test('parseAssistantItems reads closing lines (review M5)', () => {
   assert.deepEqual(ids(parseAssistantItems(text)), ['A2:done', 'Q1:answered', 'S1:done', 'D2:done']);
 });
 
-test('outside a section only marked IDs count (review 0.1.1 N8)', () => {
+test('outside a section only marked IDs count, or the next unused ID (review 0.1.1 N8, live G8)', () => {
+  const register = (text, counters) => {
+    const l = emptyLedger('claude', 's');
+    Object.assign(l.counters, counters);
+    return registerItems(l, parseAssistantItems(text));
+  };
   const prose = ['Results:', '1. Q3 2026 revenue grew 10%', '- S3 bucket is public', '2. A4 paper is standard'].join('\n');
-  assert.deepEqual(parseAssistantItems(prose), []);
+  assert.deepEqual(parseAssistantItems(prose).filter((i) => !i.loose), []);
+  assert.deepEqual(register(prose), []);
   assert.deepEqual(ids(parseAssistantItems('Notes\n- A1: Run tests\n- **Q1** Keep it? (yes/no)')), ['A1', 'Q1']);
   assert.deepEqual(ids(parseAssistantItems('Fixed it.\n- A2 done')), ['A2:done']);
-  assert.deepEqual(ids(parseAssistantItems('Revenue:\n1. Q3 2026 grew\n\nQuestions\n- Q1 Ship it? (yes/no)')), ['Q1']);
+  assert.deepEqual(register('Revenue:\n1. Q3 2026 grew\n\nQuestions\n- Q1 Ship it? (yes/no)'), ['Q1']);
+  // No headings, as the model sometimes writes them: the next IDs in order are items.
+  const plain = ['Plan:', '', '- A1 Install ESLint', '- A2 Add the scripts', '- A3 Run it', '', '- Q1 Add Prettier too? (yes/no)'].join('\n');
+  assert.deepEqual(register(plain), ['A1', 'A2', 'A3', 'Q1']);
+  assert.deepEqual(register('- A4 Deploy\n- A6 Tag', { A: 3 }), ['A4']);
+  assert.deepEqual(ids(parseAssistantItems('- Resolved: A1, Q1')), ['A1:done', 'Q1:done']);
 });
 
 test('trailing status words close an item (review 0.1.1 N2)', () => {
