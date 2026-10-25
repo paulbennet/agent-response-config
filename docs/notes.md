@@ -1,0 +1,4 @@
+- completed items should not show up in ledger list
+- items should use emojis to indicate status
+- bulk select option in the claude mod for items
+- Language levels should be made easy to configure

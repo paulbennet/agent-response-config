@@ -89,9 +89,9 @@ Or ask the agent: "set up response-config hooks for Codex".
 | Agent | Writes | Notes |
 |---|---|---|
 | Claude Code | `~/.claude/settings.json` or `.claude/settings.json` | Not needed if the plugin is installed |
-| Codex | `~/.codex/hooks.json` or `.codex/hooks.json` | Run `/hooks` and trust the 3 hooks, or they do not run. The `hooks.json` wrapper shape is unverified against a live Codex |
+| Codex | `~/.codex/hooks.json` or `.codex/hooks.json` | Run `/hooks` and trust the 3 hooks, or they do not run |
 | Copilot CLI | `~/.copilot/hooks/response-config.json` or `.github/hooks/response-config.json` | Per-prompt hints use `userPromptTransformed` |
-| Copilot in VS Code | `.github/hooks/response-config.json` (`--vscode --scope project`) | VS Code compatible event names; VS Code hooks are a preview feature and this path is unverified live |
+| Copilot in VS Code | `.github/hooks/response-config.json` (`--vscode --scope project`) | VS Code hooks are a preview feature: turn on `chat.useHooks` and keep `.github/hooks` in `chat.hookFilesLocations` |
 
 `--scope project` for Claude writes `.claude/settings.local.json`, which stays on your machine. For Codex and Copilot the project files are meant to be committed, so the skill must be installed in the project (for example with `npx skills add` without `-g`); the hook path is then written relative to the project. Without that the script refuses, unless you pass `--force`.
 
@@ -142,9 +142,9 @@ Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plu
 
 - Adherence depends on the model following instructions. There is no validator or retry.
 - Copilot only supports per-prompt hints through the `userPromptTransformed` hook, and gives the Stop hook a transcript path rather than the final message, so item tracking there is best effort.
-- VS Code Copilot hooks are a preview feature; the `--vscode` event names are unverified against a live install.
-- The Codex `hooks.json` shape is unverified against a live install.
-- Hooks and plugin were not yet run in a live Claude, Codex or Copilot session; see [docs/STATUS.md](docs/STATUS.md).
+- VS Code Copilot hooks are a preview feature and need the `chat.useHooks` setting.
+- In the Claude Code terminal, the mod's panes open only by command (`/response-config items`, `/response-config pane`, or `/response-config-mod ...` when the plugin is also installed); no key moves focus from the prompt into a pane.
+- What was checked live, per agent, is in [docs/testing-plan.md](docs/testing-plan.md); reply quality is measured by `npm run evals` ([evals/README.md](evals/README.md)).
 - A terminal Claude session reads output style files at startup, so a regenerated style applies from the next session.
 
 ## Licence

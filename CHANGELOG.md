@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.1.1
 
+- setup.mjs and the README drop the "unverified" notes for the Codex and VS Code hooks, which were checked live; the VS Code note names the `chat.useHooks` and `chat.hookFilesLocations` settings.
 - Each brevity level has its own default prose budget: low 150, medium 110, high 80, extreme 40 words. `minimal.maxWords` defaults to null; a number set there still wins (EVAL-1).
 - With a budget of 40 words or fewer, the rules and the per-prompt digest call it a hard cap to count before sending, with no extra tips, and say to add no suggestions or questions the user did not ask for (EVAL-2).
 - Error messages and failing test output are quoted verbatim in a code block, not only paraphrased (EVAL-3).

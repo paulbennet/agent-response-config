@@ -151,7 +151,6 @@ function setupCodex() {
   if (!uninstall) {
     say('codex: run /hooks in Codex and trust the 3 response-config hooks. Untrusted hooks do not run.');
     if (scope === 'project') say('codex: project hooks only load when the project .codex/ layer is trusted, and run from the project root.');
-    say('codex: the hooks.json wrapper shape is unverified against a live Codex; confirm all 3 hooks appear in /hooks.');
   }
 }
 
@@ -176,7 +175,7 @@ function setupCopilot() {
     // VS Code compatible (Claude-style) names; VS Code reads .github/hooks/*.json in the workspace.
     const mk = (event) => ({ type: 'command', command: cmd(hook, 'copilot', event), timeout: 10 });
     hooks = { SessionStart: [mk('session-start')], UserPromptSubmit: [mk('prompt')], Stop: [mk('stop')] };
-    say('copilot: --vscode writes VS Code compatible event names only (VS Code hooks are a preview feature; unverified live).');
+    say('copilot: VS Code hooks are a preview feature: turn on chat.useHooks and keep .github/hooks in chat.hookFilesLocations.');
   } else {
     const mk = (event) => ({
       type: 'command',
