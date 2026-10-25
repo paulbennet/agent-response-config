@@ -1,8 +1,8 @@
 // Parsing: assistant items, user quick replies, inline tags. Pure: no node: imports.
 
-// Remove fenced code blocks so IDs inside code are ignored.
+// Remove fenced code blocks so IDs inside code are ignored. Fences may be indented under a list item.
 export function stripFences(text) {
-  return String(text ?? '').replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[ \t]*$/gm, '');
+  return String(text ?? '').replace(/^[ \t]*(```|~~~)[^\n]*\n[\s\S]*?^[ \t]*\1[ \t]*$/gm, '');
 }
 
 // A list line that starts with an ID: "- A1 text", "* **Q2:** text", "3. D1 - text".
@@ -11,7 +11,8 @@ const LISTED_RE = /^\s*(?:[-*+]|\d+[.)])\s+(\**)([ASQD])(\d+)\**\s*([:.)–—-]
 // The same without a list marker; accepted only inside a section.
 const BARE_RE = /^\s*(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
 const LIST_LINE_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
-const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)\**\s*:?\s*\**\s*$/i;
+// "Actions", "## Questions (Q)", "**Decisions (D):**"; the rules name the headings with their letter.
+const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)(?:\s*\([ASQD]\))?\**\s*:?\s*\**\s*$/i;
 // "Resolved: A2, Q1" / "Done: A1" / "Closed: S3"
 const RESOLVED_RE = /^\s*\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)\s*$/i;
 const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';

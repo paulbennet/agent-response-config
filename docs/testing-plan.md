@@ -45,6 +45,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 |---|---|---|
 | STY-2 | `tools/e2e.mjs` | A note added after the last line of the managed style file makes it "unmanaged" instead of "drifted". The note is kept, so nothing is lost. The warning says the file "exists without provenance", which is misleading. Fix: find the provenance comment anywhere in the file and treat text after it as a hand edit. |
 | HOOK-1 | G5, live | `hook.mjs` exits after 2.5 s. On a busy Claude Code startup, SessionStart took 3.4 s (about 0.4 s normally), so it exited without printing. The first prompt sent the full rules instead, so the model still got them. Fixed: the timer is now 8 s, under the 10 s host timeouts. Retest G5. |
+| PARSE-1 | G7, live | The rules print headings as `Actions (A)` and the model copies them as `## Actions (A)`, but the parser accepted only `Actions`, so the ledger stayed empty. Indented code fences were also not stripped. Fixed in `parse.mjs`, with tests. Retest G7. |
 
 ## How to run the auto cases
 
@@ -186,9 +187,9 @@ Use Claude Code 2.1.310 or newer in a normal terminal, not inside another Claude
 | G2 | The plugin's hook commands run with `CLAUDE_PLUGIN_ROOT` set | Auto, e2e PLUG-1 | Pass |
 | G3 | The shipped output style matches the rules | Auto, e2e PLUG-2 | Pass |
 | G4 | The install command in the README works | Manual | Pass (needed `http.sslBackend schannel` on this machine) |
-| G5 | SessionStart fires and its rules reach the model | Manual | Fail: fired, but took 3.4 s and the 2.5 s exit timer cut it off with no output (HOOK-1) |
+| G5 | SessionStart fires and its rules reach the model | Manual | Pass after the HOOK-1 fix. First run failed: the 2.5 s exit timer cut it off. The retest took 5.9 s on startup, a thin margin under 8 s |
 | G6 | The per-prompt hint reaches the model | Manual | Pass (sent the full rules, as D6 expects after a silent session start) |
-| G7 | Stop fills the ledger | Manual | |
+| G7 | Stop fills the ledger | Manual | Fail, then fixed (PARSE-1); retest |
 | G8 | Quick replies resolve items | Manual | |
 | G9 | After `/compact`, IDs continue | Manual | |
 | G10 | After `claude --resume`, open items come back | Manual | |

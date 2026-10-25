@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Section headings with their type letter, such as `## Actions (A)`, which is how the rules print them, now open a section. Before this, items under them were not tracked (PARSE-1).
+- Code fences indented under a list item are ignored when reading items.
 - The hook script waits up to 8 s before giving up, instead of 2.5 s. A slow Claude Code startup cut off the session-start hook (HOOK-1).
 
 Fixes from [docs/review-0.1.1.md](docs/review-0.1.1.md):

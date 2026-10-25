@@ -19,6 +19,20 @@ test('parseAssistantItems accepts bare IDs only under a section heading', () => 
   assert.deepEqual(ids(parseAssistantItems('**Questions:**\nQ3 Keep it? (yes/no)')), ['Q3']);
 });
 
+test('headings with the type letter, as the rules print them, open a section (live G7)', () => {
+  const text = [
+    'Plan for a lint script.', '', '## Actions (A)', '- A1 Install ESLint', '- A2 Create the config',
+    '- A3 Add scripts to `package.json`:', '  ```json', '  "scripts": {', '    "lint": "eslint ."', '  }', '  ```',
+    '', '## Questions (Q)', '- Q1 Which folder? (path + stack)', '', '**Decisions (D):**', 'D1 Pick (a) x (b) y',
+  ].join('\n');
+  assert.deepEqual(ids(parseAssistantItems(text)), ['A1', 'A2', 'A3', 'Q1', 'D1']);
+});
+
+test('indented fences under a list item are stripped', () => {
+  const text = ['Actions', '- A1 Add scripts:', '  ```', '  - A9 inside code', '  ```', 'A2 Run them'].join('\n');
+  assert.deepEqual(ids(parseAssistantItems(text)), ['A1', 'A2']);
+});
+
 test('parseAssistantItems ignores prose and table rows that start with an ID-like token (review M1)', () => {
   const text = ['Q3 2026 revenue grew.', 'A4 paper is standard.', 'S3 bucket is public.', '| D1 | cell |'].join('\n');
   assert.deepEqual(parseAssistantItems(text), []);
