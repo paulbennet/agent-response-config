@@ -10,6 +10,7 @@ import { runWizard } from './wizard'
 import {
   cli, commandName, refresh, save,
 } from './engine'
+import type { Dollar } from './engine'
 // @ts-ignore bundled plain-JS modules without declarations
 import { effectiveConfig, modeSummary } from '../engine/lib/hint.mjs'
 // @ts-ignore
@@ -63,6 +64,19 @@ export function splitItem(text: string) {
 
 type Action = { key: string; label: string; hotkey?: string; primary?: boolean; quick?: boolean; run: () => void }
 
+// Panes open as tall as their content, so an inline pane is not cut to a third of the screen:
+// the config pane's rows, and per item type a heading, its rows and a gap, plus the hint line.
+const CONFIG_ROWS = 24
+export async function openItemsPane($: Dollar) {
+  const ledger = await read($, ledgerAtom)
+  const open: Item[] = ledger ? openItems(ledger) : []
+  const types = new Set(open.map(i => i.type)).size
+  await $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true, rows: Math.max(4, open.length + types * 2 + 1) })
+}
+export async function openConfigPane($: Dollar) {
+  await $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true, rows: CONFIG_ROWS })
+}
+
 export function installUi(on: On) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const cfg = await read($, configAtom)
@@ -92,8 +106,8 @@ export function installUi(on: On) {
           ? <Text dimColor>/{commandName()} items · pane</Text>
           : (
             <Box flexDirection="row" columnGap={1}>
-              <Button key="rc-open-items" label="Items" onPress={() => $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true })} />
-              <Button key="rc-open-config" label="Config" variant="secondary" onPress={() => $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true })} />
+              <Button key="rc-open-items" label="Items" onPress={() => { void openItemsPane($) }} />
+              <Button key="rc-open-config" label="Config" variant="secondary" onPress={() => { void openConfigPane($) }} />
             </Box>
           )}
       </Box>
@@ -119,10 +133,13 @@ export function installUi(on: On) {
     // A label column of fixed width, then the control, so every row lines up; a pointer surface
     // also caps the control's width so a select does not stretch across the pane.
     const field = (key: string, label: string, control: RenderChildren, after?: RenderChildren) => (
-      <Box key={`row-${key}`} flexDirection="row" columnGap={1} alignItems="center">
+      // Top-aligned on the terminal, where an open select lists its options in place below it.
+      <Box key={`row-${key}`} flexDirection="row" columnGap={1} alignItems={terminal ? 'flex-start' : 'center'}>
         <Box width={terminal ? 22 : '40%'} flexShrink={0}><Text>{label}</Text></Box>
-        <Box width={terminal ? undefined : '45%'} flexShrink={1}>{control}</Box>
-        {after}
+        <Box flexDirection="row" columnGap={1} alignItems={terminal ? 'flex-start' : 'center'} flexShrink={1}>
+          <Box width={terminal ? undefined : '45%'} flexShrink={1}>{control}</Box>
+          {after}
+        </Box>
       </Box>
     )
     const muted = terminal ? { variant: 'secondary' as const } : e.surface === 'vscode' ? { plain: true as const } : { variant: 'secondary' as const }

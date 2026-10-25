@@ -7,7 +7,7 @@ import {
   COMMANDS, cli, commandName, ensureLedger, markActive, mutateLedger, refresh, refreshIfChanged, registerCommand,
 } from './engine'
 import type { Dollar } from './engine'
-import { CONFIG_PANE, ITEMS_PANE, installUi } from './ui'
+import { installUi, openConfigPane, openItemsPane } from './ui'
 import { firstRun, runWizard } from './wizard'
 // @ts-ignore bundled plain-JS modules without declarations
 import { applyReplies, registerItems, takeReused } from '../engine/lib/core.mjs'
@@ -130,10 +130,10 @@ async function runCommand($: Dollar, args: string): Promise<{ text: string }> {
       void runWizard($)
       return { text: 'Wizard started.' }
     case 'pane':
-      await $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true })
+      await openConfigPane($)
       return { text: 'Config pane opened.' }
     case 'items':
-      await $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true })
+      await openItemsPane($)
       return { text: 'Items pane opened.' }
     case 'style': {
       const action = rest[0] ?? 'status'
