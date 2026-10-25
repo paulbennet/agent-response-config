@@ -80,6 +80,17 @@ test('replay of live G10: settled decisions and Resolved with a note', () => {
   assert.deepEqual(Object.fromEntries(l.items.map((i) => [i.id, i.status])), { A2: 'done', A4: 'done', D1: 'answered', A6: 'open' });
 });
 
+test('replay of live H13: per-entry statuses in Resolved, options on sub-bullets', () => {
+  const e = env();
+  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
+  stop('## Actions (A)\n- A2 Create the root .gitignore\n\n## Questions (Q)\n- Q2 Will this repo hold secrets? (yes/no)\n\n## Decisions (D)\n- D1 Which template should A2 start from?\n  - (a) The minimal list\n  - (b) A language-specific GitHub template');
+  let l = loadLedger('claude', 's', e);
+  assert.match(l.items.find((i) => i.id === 'D1').text, /\(a\) The minimal list \(b\) A language-specific/);
+  stop('Skipped.\n\nResolved: A2 (skipped), Q2 (skipped), D1 (skipped)');
+  l = loadLedger('claude', 's', e);
+  assert.deepEqual(Object.fromEntries(l.items.map((i) => [i.id, i.status])), { A2: 'skipped', Q2: 'skipped', D1: 'skipped' });
+});
+
 test('codex stop prints {} and copilot formats per event', () => {
   const e = env();
   assert.equal(run({ agent: 'codex', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: 'x' }, env: e }), '{}');

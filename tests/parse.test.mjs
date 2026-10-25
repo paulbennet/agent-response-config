@@ -38,6 +38,8 @@ test('a status with a note closes the item; "still open" reopens it (live G8)', 
   assert.deepEqual(ids(items), ['A1:done', 'A2', 'A3:done', 'Q1:answered', 'Q2']);
   assert.equal(items[1].reopen, true);
   assert.equal(items[1].text, 'run `npm i`');
+  const again = parseAssistantItems('## Questions (Q)\n- Q1 is still open: Which framework? (name it)');
+  assert.deepEqual([again[0].reopen, again[0].text], [true, 'Which framework? (name it)']);
   assert.deepEqual(ids(parseAssistantItems('## Questions\n- Q1 skipped (replaced by Q2)\n- Q2 Run A2 now? (yes/no)')), ['Q1:skipped', 'Q2']);
   // A status word that does not lead with a separator is ordinary item text.
   assert.deepEqual(ids(parseAssistantItems('Actions\n- A1 Done criteria for the release')), ['A1']);

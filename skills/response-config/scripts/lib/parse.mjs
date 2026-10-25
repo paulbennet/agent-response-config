@@ -13,8 +13,12 @@ const BARE_RE = /^\s*(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
 const LIST_LINE_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
 // "Actions", "## Questions (Q)", "**Decisions (D):**"; the rules name the headings with their letter.
 const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)(?:\s*\([ASQD]\))?\**\s*:?\s*\**\s*$/i;
-// "Resolved: A2, Q1" / "Done: A1" / "Closed: S3" / "Resolved: A4 (replaced by A6)"
-const RESOLVED_RE = /^\s*(?:[-*+]\s+)?\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)(?:[(—–-].*)?$/i;
+// "Resolved: A2, Q1" / "Done: A1" / "Closed: S3" / "Resolved: A4 (replaced by A6)" /
+// "Resolved: A2 (skipped), Q2 (answered), D1": each entry may carry its own status.
+const RESOLVED_RE = /^\s*(?:[-*+]\s+)?\**(resolved|done|closed|answered|skipped)\**\s*:\s*([ASQD]\d+\b.*)$/i;
+const RESOLVED_ENTRY_RE = /^\s*(?:and\s+)?([ASQD]\d+)\b\s*(?:\((\w+)[^)]*\))?/i;
+// An option on its own line under a decision or question: "  - (a) The minimal list"
+const OPTION_LINE_RE = /^\s+(?:[-*+]\s+)?(\([a-h]\)\s*\S.*)$/;
 const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';
 // An item whose whole text is a status: "- A2 done", "- Q1 (answered)", "- A3 ✓"
 const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]+)$`, 'i');
@@ -26,8 +30,8 @@ const TRAILING_CLOSE_RE = new RegExp(
 const LEADING_CLOSE_RE = new RegExp(`^\\(?(${STATUS_WORD})\\)?\\s*(?:[:—–-]\\s*\\S|\\()`, 'i');
 // A settled question or decision: "- D1 assumed (a), plain JavaScript", "- Q2 chose: no"
 const SETTLED_RE = /^(?:decided|chose|chosen|picked|assumed|going with)\b\s*[:—–-]?\s*(\S.*)$/i;
-// A reminder that an item is not finished: "- A1 still open: run npm i"
-const STILL_OPEN_RE = /^still\s+(?:open|pending|to do|not done)\s*[:—–-]?\s*(.*)$/i;
+// A reminder that an item is not finished: "- A1 still open: run npm i", "- Q1 is still open: ..."
+const STILL_OPEN_RE = /^(?:is\s+|are\s+)?still\s+(?:open|pending|to do|not done)\s*[:—–-]?\s*(.*)$/i;
 
 const CLOSE_STATUS = {
   done: 'done', completed: 'done', complete: 'done', finished: 'done', fixed: 'done', resolved: 'done', closed: 'done',
@@ -48,9 +52,18 @@ export function parseAssistantItems(text) {
     if (HEADING_RE.test(line)) { inSection = true; continue; }
     const resolved = RESOLVED_RE.exec(line);
     if (resolved) {
-      for (const id of resolved[2].match(/[ASQD]\d+/gi) ?? []) {
-        items.push({ type: id[0].toUpperCase(), n: Number(id.slice(1)), text: '', close: CLOSE_STATUS[resolved[1].toLowerCase()] });
+      for (const entry of resolved[2].split(/[,;]/)) {
+        const e = RESOLVED_ENTRY_RE.exec(entry);
+        if (!e) continue;
+        const own = e[2] && CLOSE_STATUS[e[2].toLowerCase()];
+        items.push({ type: e[1][0].toUpperCase(), n: Number(e[1].slice(1)), text: '', close: own ?? CLOSE_STATUS[resolved[1].toLowerCase()] });
       }
+      continue;
+    }
+    const last = items[items.length - 1];
+    const option = OPTION_LINE_RE.exec(line);
+    if (option && last && !last.close && (last.type === 'D' || last.type === 'Q')) {
+      last.text = `${last.text} ${option[1].trim()}`;
       continue;
     }
     const m = LISTED_RE.exec(line) ?? (inSection ? BARE_RE.exec(line) : null);

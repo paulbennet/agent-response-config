@@ -53,6 +53,8 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | HOOK-2 | G12, live | With the plugin and `setup.mjs` hooks both installed, both copies answered every event: the digest arrived twice, the ledger turn went up by 2 per prompt, and the plugin copy's SessionStart returned empty output. Fixed: each run claims its event by a hash of the payload, and a second copy within 10 s answers silently. Retest G12. |
 | PARSE-6 | G14, live | `- Q1 skipped (replaced by Q2)` was read as a new Q1 and retired the real one. Fixed: a status followed by a note in brackets closes the item. |
 | MOD-1 | H8, live | With the response-config plugin installed, the mod's `$.command.register({ name: 'response-config' })` was refused ("it is the plugin's /response-config:response-config"). session.start threw, so the wizard never showed. Fixed: the command is registered last, falls back to `/response-config-mod`, and a toast names it once; the expected refusal is no longer logged to the transcript; messages use the registered name. Mod test added; `tsc` passes. Retest H8, H9. |
+| PARSE-7 | H13, live | `Resolved: A2 (skipped), Q2 (skipped), D1 (skipped)` closed only A2, and as done. Options written on sub-bullets under D1 were dropped. Fixed: each Resolved entry is read with its own status, and `  - (a) ...` lines are added to the D or Q item above. |
+| MOD-2 | H13, live | The items pane cut the list by item count, not rows, so items were hidden; buttons stacked; a D item without inline options had no button at all. The band `A0 S1 Q1 D1` read like item IDs. Fixed: the pane draws every item and the engine scrolls it once focused, buttons sit in a row, every Q and D has Answer, and the band reads `open A:0 S:1 Q:1 D:1`. |
 
 ## How to run the auto cases
 
@@ -237,9 +239,9 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H8 | The mod loads with no error line in the transcript | Manual | Pass after the MOD-1 fix (no errors; `/response-config-mod` registered and named in a toast) |
 | H9 | First-run wizard appears; Later and Never ask behave | Manual | Pass (Later: shown again next start; Never ask: not shown again) |
 | H10 | `/response-config` shows the mode | Manual | Pass, as `/response-config-mod` with the plugin installed |
-| H11 | `on`, `off`, `verbose`, `terse`, `reset` change the next reply | Manual | |
-| H12 | `/response-config pane`: edits save to the config file and the style syncs | Manual | |
-| H13 | `/response-config items`: Do, Done, Skip, Yes, No, option and Answer buttons send the right reply | Manual | |
+| H11 | `on`, `off`, `verbose`, `terse`, `reset` change the next reply | Manual | Pass |
+| H12 | `/response-config pane`: edits save to the config file and the style syncs | Manual | Pass (level saved to the user file; managed style rewritten; band updated) |
+| H13 | `/response-config items`: Do, Done, Skip, Yes, No, option and Answer buttons send the right reply | Manual | Fail: items hidden, D1 had no buttons, Q2/D1 not closed (PARSE-7, MOD-2). Fixed; retest |
 | H14 | The band above the prompt shows the mode and open counts, and updates after a turn | Manual | |
 | H15 | `/response-config style status` and `style sync` | Manual | |
 | H16 | With the plugin hooks also installed, the hooks stand down and the rules appear once | Manual | |

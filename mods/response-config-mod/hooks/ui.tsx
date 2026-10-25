@@ -42,7 +42,7 @@ export function installUi(on: On) {
       <Box>
         <Text dimColor>reply: {modeSummary(eff)} </Text>
         {eff.enabled && cfg.structured.on && (
-          <Text dimColor>| A{count('A')} S{count('S')} Q{count('Q')} D{count('D')} </Text>
+          <Text dimColor>| open A:{count('A')} S:{count('S')} Q:{count('Q')} D:{count('D')} </Text>
         )}
         {style === 'drifted' && <Text bold>style drift </Text>}
         <Button key="rc-open-config" label="Config" onPress={() => $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true })} />
@@ -126,40 +126,33 @@ export function installUi(on: On) {
     const open = led ? openItems(led) : []
     const send = (text: string) => { void $.prompt.submit({ text, asUser: true }) }
     if (open.length === 0) return <Text dimColor>No open items. They appear after the agent lists A/S/Q/D items.</Text>
-    const room = Math.max(1, (e.viewport?.rows ?? 24) - 3)
+
+    // Every item is drawn; the engine scrolls the pane body (arrows, once focused).
+    const buttons = (item: { id: string; type: string; text: string }) => {
+      const b = (key: string, label: string, onPress: () => void) => <Button key={`${item.id}-${key}`} label={label} onPress={onPress} />
+      if (item.type === 'A' || item.type === 'S') {
+        return [b('do', 'Do', () => send(`do ${item.id}`)), b('done', 'Done', () => send(`done ${item.id}`)), b('skip', 'Skip', () => send(`skip ${item.id}`))]
+      }
+      const out = []
+      if (item.type === 'Q' && /yes\/no/i.test(item.text)) {
+        out.push(b('yes', 'Yes', () => send(`${item.id}: yes`)), b('no', 'No', () => send(`${item.id}: no`)))
+      }
+      for (const o of new Set([...item.text.matchAll(/\(([a-h])\)/g)].map(x => x[1] as string))) {
+        out.push(b(o, o, () => send(`${item.id}: ${o}`)))
+      }
+      out.push(b('ans', 'Answer', () => { void $.prompt.fill({ text: `${item.id}: ` }) }))
+      return out
+    }
 
     return (
       <Box flexDirection="column">
-        {open.slice(-room).map((item: { id: string; type: string; text: string; status: string }) => {
-          const options = item.type === 'D' ? [...item.text.matchAll(/\(([a-z])\)/g)].map(x => x[1]) : []
-          const isYesNo = item.type === 'Q' && /yes\/no/i.test(item.text)
-          return (
-            <Box key={item.id} flexDirection="column">
-              <Text>{item.id}{item.status === 'in-progress' ? ' (in progress)' : ''}: {item.text}</Text>
-              <Box>
-                {(item.type === 'A' || item.type === 'S') && (
-                  <>
-                    <Button key={`${item.id}-do`} label="Do" onPress={() => send(`do ${item.id}`)} />
-                    <Button key={`${item.id}-done`} label="Done" onPress={() => send(`done ${item.id}`)} />
-                    <Button key={`${item.id}-skip`} label="Skip" onPress={() => send(`skip ${item.id}`)} />
-                  </>
-                )}
-                {isYesNo && (
-                  <>
-                    <Button key={`${item.id}-yes`} label="Yes" onPress={() => send(`${item.id}: yes`)} />
-                    <Button key={`${item.id}-no`} label="No" onPress={() => send(`${item.id}: no`)} />
-                  </>
-                )}
-                {options.map(o => (
-                  <Button key={`${item.id}-${o}`} label={o} onPress={() => send(`${item.id}: ${o}`)} />
-                ))}
-                {item.type === 'Q' && !isYesNo && (
-                  <Button key={`${item.id}-ans`} label="Answer" onPress={() => { void $.prompt.fill({ text: `${item.id}: ` }) }} />
-                )}
-              </Box>
-            </Box>
-          )
-        })}
+        {open.map((item: { id: string; type: string; text: string; status: string }) => (
+          <Box key={item.id} flexDirection="column">
+            <Text>{item.id}{item.status === 'in-progress' ? ' (in progress)' : ''}: {item.text}</Text>
+            <Box flexDirection="row" flexWrap="wrap">{buttons(item)}</Box>
+          </Box>
+        ))}
+        {!e.props.isFocused && <Text dimColor>ctrl+x tab focuses this pane; arrows scroll.</Text>}
       </Box>
     )
   })

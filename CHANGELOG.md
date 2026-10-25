@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `Resolved: A2 (skipped), Q2 (answered), D1` gives each entry its own status. Before this only the first ID was read (PARSE-7).
+- Options on their own lines under a decision or question (`  - (a) ...`) belong to that item, so the items pane offers them as buttons.
+- Mod items pane: every open item is drawn and the pane scrolls once focused; buttons sit in a row; every question and decision has an Answer button. The band reads `open A:0 S:1 Q:1 D:1`, so the counts are not mistaken for IDs (MOD-2).
+- `- Q1 is still open: ...` is read as a reminder and keeps the item's text.
 - The mod starts when the response-config plugin is also installed. Its skill takes `/response-config`, which made the mod's session start fail before the wizard. The mod now registers its command last and falls back to `/response-config-mod` (MOD-1).
 - `- Q1 skipped (replaced by Q2)` closes Q1; a status followed by a note in brackets is a closing line (PARSE-6).
 - When the plugin and `setup.mjs` hooks are both installed, each event is answered once. Before this the rules were added twice and the ledger counted every prompt twice (HOOK-2).
