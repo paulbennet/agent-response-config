@@ -57,6 +57,7 @@ export function sameItem(a, b) {
 // - An ID reused for something else takes over the ID. The earlier item is retired as
 //   `superseded` under `A1~1` (out of ID lookup) and queued in `reused` for the next hint.
 // - Entries with `close` mark an existing item done/answered/skipped.
+// - Entries with `reopen` ("A1 still open: ...") set an existing item back to open.
 export function registerItems(ledger, parsed) {
   normalizeLedger(ledger);
   const added = [];
@@ -65,6 +66,10 @@ export function registerItems(ledger, parsed) {
     const existing = ledger.items.find((i) => i.id === id);
     if (p.close) {
       if (existing) existing.status = p.close;
+      continue;
+    }
+    if (p.reopen && existing) {
+      existing.status = 'open';
       continue;
     }
     if (existing && sameItem(existing.text, p.text)) {

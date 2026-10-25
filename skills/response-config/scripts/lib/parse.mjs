@@ -22,6 +22,10 @@ const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]
 const TRAILING_CLOSE_RE = new RegExp(
   `\\s*(?:\\((${STATUS_WORD})\\)|\\[(${STATUS_WORD})\\]|[—–-]\\s*(${STATUS_WORD})|([✓✔✅]+))\\.?\\s*$`, 'i',
 );
+// A status with a note: "- A1 done: installed eslint", "- Q1 answered - yes"
+const LEADING_CLOSE_RE = new RegExp(`^\\(?(${STATUS_WORD})\\)?\\s*[:—–-]\\s*\\S`, 'i');
+// A reminder that an item is not finished: "- A1 still open: run npm i"
+const STILL_OPEN_RE = /^still\s+(?:open|pending|to do|not done)\s*[:—–-]?\s*(.*)$/i;
 
 const CLOSE_STATUS = {
   done: 'done', completed: 'done', complete: 'done', finished: 'done', fixed: 'done', resolved: 'done', closed: 'done',
@@ -59,7 +63,17 @@ export function parseAssistantItems(text) {
       items.push({ type, n, text: '', close: closeStatus(whole[1]) });
       continue;
     }
+    const leading = LEADING_CLOSE_RE.exec(body);
+    if (leading) {
+      items.push({ type, n, text: '', close: closeStatus(leading[1]) });
+      continue;
+    }
     if (!inSection && !bold && !sep) continue;
+    const still = STILL_OPEN_RE.exec(body);
+    if (still) {
+      items.push({ type, n, text: still[1].trim(), reopen: true });
+      continue;
+    }
     const tail = TRAILING_CLOSE_RE.exec(body);
     const itemText = tail ? body.slice(0, tail.index).trim() : body;
     if (tail && itemText) {
@@ -113,6 +127,9 @@ export function parseUserReplies(text) {
     if (m[3] === '?') push({ kind: 'ref', id, value: value.slice(0, MAX_ANSWER) });
     else if (value && value.length <= MAX_ANSWER) push({ kind: 'answer', id, value });
   }
+  // A short answer without a colon, as a whole clause: "Q2 ok", "D1 b", "Q1 yes, Q2 no".
+  const shortRe = /(?:^|[\n,;])[ \t]*([QD]\d+)[ \t]+(yes|no|ok|okay|sure|yep|nope|y|n|[a-h])[ \t]*(?=$|[\n,;.!])/gi;
+  for (const m of t.matchAll(shortRe)) push({ kind: 'answer', id: m[1].toUpperCase(), value: m[2] });
   // A message that is only IDs ("A2", "A2, S1") means "do these" for actions and suggestions;
   // for questions and decisions it only points at the item.
   if (replies.length === 0 && new RegExp(`^[\\s,;]*(?:${ID}[\\s,;]*)+$`, 'i').test(t)) {

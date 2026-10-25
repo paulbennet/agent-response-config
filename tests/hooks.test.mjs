@@ -41,6 +41,21 @@ test('stop registers items, prompt resolves replies and advances IDs', () => {
   assert.match(out, /Next IDs: A2 S4 Q2 D1/);
 });
 
+test('replay of live G8: closings with notes and "still open" do not retire IDs', () => {
+  const e = env();
+  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
+  const prompt = (p) => run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: p }, env: e });
+  stop('## Actions (A)\n- A1 Install ESLint\n- A2 Create the config\n- A3 Add the lint script\n\n## Questions (Q)\n- Q1 OK to add ESLint? (yes/no)');
+  prompt('Q1: yes, done A1');
+  stop('## Actions (A)\n- A1 still open: run `npm i -D eslint`\n\n## Questions (Q)\n- Q1 answered: yes\n- Q2 Should I run the install? (yes/no)');
+  prompt('Q2 ok');
+  stop('## Actions (A)\n- A1 done: installed eslint\n- A2 done: added the config\n- A3 done: added the script\n- A4 Run the e2e tests\n\n## Questions (Q)\n- Q2 answered: ok\n- Q3 Commit? (yes/no)');
+  const l = loadLedger('claude', 's', e);
+  const status = Object.fromEntries(l.items.map((i) => [i.id, i.status]));
+  assert.deepEqual(status, { A1: 'done', A2: 'done', A3: 'done', Q1: 'answered', Q2: 'answered', A4: 'open', Q3: 'open' });
+  assert.deepEqual(l.reused, []);
+});
+
 test('codex stop prints {} and copilot formats per event', () => {
   const e = env();
   assert.equal(run({ agent: 'codex', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: 'x' }, env: e }), '{}');

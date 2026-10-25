@@ -28,6 +28,19 @@ test('headings with the type letter, as the rules print them, open a section (li
   assert.deepEqual(ids(parseAssistantItems(text)), ['A1', 'A2', 'A3', 'Q1', 'D1']);
 });
 
+test('a status with a note closes the item; "still open" reopens it (live G8)', () => {
+  const text = [
+    '## Actions (A)', '- A1 done: installed `eslint`', '- A2 still open: run `npm i`', '- A3 Done - added the script',
+    '', '## Questions (Q)', '- Q1 answered: yes', '- Q2 Should I run it? (yes/no)',
+  ].join('\n');
+  const items = parseAssistantItems(text);
+  assert.deepEqual(ids(items), ['A1:done', 'A2', 'A3:done', 'Q1:answered', 'Q2']);
+  assert.equal(items[1].reopen, true);
+  assert.equal(items[1].text, 'run `npm i`');
+  // A status word that does not lead with a separator is ordinary item text.
+  assert.deepEqual(ids(parseAssistantItems('Actions\n- A1 Done criteria for the release')), ['A1']);
+});
+
 test('indented fences under a list item are stripped', () => {
   const text = ['Actions', '- A1 Add scripts:', '  ```', '  - A9 inside code', '  ```', 'A2 Run them'].join('\n');
   assert.deepEqual(ids(parseAssistantItems(text)), ['A1', 'A2']);
@@ -94,6 +107,17 @@ test('courtesy prefixes, postfix verbs and bare Q/D ids (review 0.1.1 N6, N7)', 
   assert.deepEqual(r('I will do A2 later'), []);
   assert.deepEqual(r('A1 done by tomorrow would be great'), []);
   assert.deepEqual(r('the A1 done flag is wrong'), []);
+});
+
+test('short answers without a colon (live G8)', () => {
+  const r = (t) => parseUserReplies(t).map((x) => `${x.kind}:${x.id}=${x.value ?? ''}`);
+  assert.deepEqual(r('Q2 ok'), ['answer:Q2=ok']);
+  assert.deepEqual(r('D1 b'), ['answer:D1=b']);
+  assert.deepEqual(r('Q1 yes, Q2 no'), ['answer:Q1=yes', 'answer:Q2=no']);
+  assert.deepEqual(r('Q2 ok, done A3'), ['done:A3=', 'answer:Q2=ok']);
+  // still prose
+  assert.deepEqual(r('Q2 ok but why'), []);
+  assert.deepEqual(r('about Q1 a better option exists'), []);
 });
 
 test('parseTags strips known tags only', () => {

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A closing line with a note, such as `- A1 done: installed eslint` or `- Q1 answered: yes`, now closes the item. Before this it was read as a new item with the same ID, which retired the old one (PARSE-2).
+- `- A1 still open: ...` sets the item back to open instead of replacing it.
+- Short answers without a colon, such as `Q2 ok`, `D1 b` or `Q1 yes, Q2 no`, are recognised (PARSE-3).
 - Section headings with their type letter, such as `## Actions (A)`, which is how the rules print them, now open a section. Before this, items under them were not tracked (PARSE-1).
 - Code fences indented under a list item are ignored when reading items.
 - The hook script waits up to 8 s before giving up, instead of 2.5 s. A slow Claude Code startup cut off the session-start hook (HOOK-1).
