@@ -123,4 +123,7 @@ export function takeReused(ledger) {
 
 export const openItems = (ledger) => ledger.items.filter(isOpen);
 
-export const nextIds = (ledger) => TYPES.map((t) => `${t}${ledger.counters[t] + 1}`).join(' ');
+// sections: the configured section names; only their types are offered.
+export const nextIds = (ledger, sections) => TYPES
+  .filter((t) => !sections || sections.some((s) => s[0].toUpperCase() === t))
+  .map((t) => `${t}${ledger.counters[t] + 1}`).join(' ');

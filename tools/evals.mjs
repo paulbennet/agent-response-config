@@ -62,7 +62,7 @@ export function measure(text) {
     fkGrade: +fk.toFixed(1),
     headings: ['action', 'suggestion', 'question', 'decision'].filter(head),
     items: parseAssistantItems(text).filter((i) => !i.close && !i.loose).map((i) => `${i.type}${i.n}`),
-    you: /\byou\b/i.test(prose(text)),
+    you: /\byou(?:r|rs|rself)?\b/i.test(prose(text)),
   };
 }
 
@@ -103,7 +103,9 @@ const CASES = [
     check: ([[r1, r2]]) => {
       const before = measure(r1).items;
       const after = measure(r2).items;
-      const repeated = after.filter((id) => before.includes(id));
+      // A restated open item ("- Q1 (still open): ...") is not a repeat.
+      const restated = (id) => new RegExp(`^\\s*[-*]\\s*\\**${id}\\b[^\\n]*still open`, 'im').test(r2);
+      const repeated = after.filter((id) => before.includes(id) && !restated(id));
       return pass(repeated.length === 0, `turn 1 items ${before.join(',') || 'none'}; turn 2 new items ${after.join(',') || 'none'}; repeated ${repeated.join(',') || 'none'}`);
     },
   },

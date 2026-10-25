@@ -4,6 +4,9 @@
 
 - Each brevity level has its own default prose budget: low 150, medium 110, high 80, extreme 40 words. `minimal.maxWords` defaults to null; a number set there still wins (EVAL-1).
 - With a budget of 40 words or fewer, the rules and the per-prompt digest call it a hard cap to count before sending, with no extra tips, and say to add no suggestions or questions the user did not ask for (EVAL-2).
+- Error messages and failing test output are quoted verbatim in a code block, not only paraphrased (EVAL-3).
+- A choice that is the user's to make goes under Decisions with the pick marked "(recommended)", instead of being settled in the summary (EVAL-4).
+- "Next IDs" lists only the configured section types (EVAL-6).
 - Rules: the prose budget counts the items and asks for tables or code only when needed; with fewer than four sections, the rules say to use only those, and the answer-form line and the digest name only the configured sections; "never add an item only to close it in the same reply".
 - `tools/evals.mjs` (`npm run evals`) runs the section M reply-quality cases headless against Claude Code, Codex or Copilot and scores them.
 

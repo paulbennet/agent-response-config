@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deepMerge, loadDefaults, validate } from '../skills/response-config/scripts/lib/config.mjs';
-import { renderDigest, renderRules } from '../skills/response-config/scripts/lib/hint.mjs';
+import { emptyLedger } from '../skills/response-config/scripts/lib/core.mjs';
+import { renderDigest, renderPromptHint, renderRules } from '../skills/response-config/scripts/lib/hint.mjs';
 
 const cfg = (over = {}) => deepMerge(loadDefaults(), over);
 const budget = (c) => Number(renderRules(c).match(/at most (\d+) words/)[1]);
@@ -28,4 +29,16 @@ test('a tight budget forbids unasked suggestions and questions', () => {
   assert.doesNotMatch(renderDigest(cfg()), /hard cap/);
   assert.doesNotMatch(renderRules(cfg({ minimal: { maxWords: 30 }, structured: { on: false } })), /Add no/);
   assert.match(renderRules(cfg({ minimal: { maxWords: 30 }, structured: { sections: ['actions', 'questions'] } })), /Add no questions the user/);
+});
+
+test('choices go under Decisions; errors are quoted verbatim', () => {
+  assert.match(renderRules(cfg()), /choice is theirs to make, put it under Decisions/);
+  assert.doesNotMatch(renderRules(cfg({ structured: { sections: ['actions', 'questions'] } })), /under Decisions/);
+  assert.match(renderRules(cfg()), /failing test output verbatim in a code block/);
+});
+
+test('Next IDs offers only the configured section types', () => {
+  const c = cfg({ structured: { sections: ['actions', 'questions'] } });
+  assert.match(renderPromptHint(c, emptyLedger('claude', 's')), /Next IDs: A1 Q1$/m);
+  assert.match(renderPromptHint(cfg(), emptyLedger('claude', 's')), /Next IDs: A1 S1 Q1 D1$/m);
 });

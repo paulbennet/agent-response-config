@@ -101,6 +101,7 @@ export function renderRules(cfg) {
     lines.push(
       '- Exceptions, always full length: error messages, failing test output, security warnings, confirmations before destructive actions, and anything the user explicitly asks to have explained in detail.',
     );
+    lines.push('- Quote error messages and failing test output verbatim in a code block; never only paraphrase them.');
   }
   if (cfg.structured.on) {
     lines.push('STRUCTURE');
@@ -124,6 +125,9 @@ export function renderRules(cfg) {
       sections.includes('decisions') && 'Decisions list lettered options: "(a) ... (b) ...".',
     ].filter(Boolean);
     if (forms.length) lines.push(`- ${forms.join(' ')}`);
+    if (sections.includes('decisions')) {
+      lines.push('- When the user asks which option to take, or a choice is theirs to make, put it under Decisions and mark your pick "(recommended)". Do not settle it in the summary.');
+    }
     lines.push('- When you finish or settle an item, close it with a line "- A2 done" (or answered/skipped), or "Resolved: A2, Q1". Never add an item only to close it in the same reply.');
     if (cfg.structured.replyHint) {
       lines.push(
@@ -161,7 +165,7 @@ export function renderSessionHint(cfg, ledger, { notes = [] } = {}) {
   if (cfg.enabled && cfg.structured.on && ledger) {
     const open = itemLines(ledger);
     if (open.length) out.push('OPEN ITEMS from earlier turns:', ...open);
-    out.push(`Next IDs: ${nextIds(ledger)}`);
+    out.push(`Next IDs: ${nextIds(ledger, cfg.structured.sections)}`);
   }
   for (const n of notes) out.push(`NOTE: ${n}`);
   return cap(out.join('\n'));
@@ -218,7 +222,7 @@ export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, proble
     }
     const open = openItems(ledger);
     if (open.length) lines.push(`Open: ${open.map((i) => i.id).join(' ')}`);
-    lines.push(`Next IDs: ${nextIds(ledger)}`);
+    lines.push(`Next IDs: ${nextIds(ledger, cfg.structured.sections)}`);
   }
   for (const p of problems.slice(0, 1)) lines.push(`Config problem: ${p}`);
   return cap(lines.join('\n'));
