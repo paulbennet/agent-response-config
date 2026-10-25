@@ -58,8 +58,8 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | ENGINE-1 | H13 review, live | Claude Code 2.1.310 terminal: no keyboard route from the prompt or band into a plugin pane (`ctrl+x tab` focuses the band only; `pane:next` works only inside a pane; a band press keeps the keys, so `focus` on open is refused; mouse clicks do not reach it). The mod opens panes by command, which grants the keys, and the terminal band names those commands instead of drawing buttons. Feedback for Claude Code. |
 | PARSE-8 | J4, live | `- A2 Review README.md against the repo: done.` stayed open. Fixed: a status after a colon at the end closes the item. |
 | HOOK-3 | J2, live | Copilot runs sessionStart and the first userPromptTransformed at the same moment; the prompt hook reads the ledger before session start saved it, so turn 1 carries the full rules twice. Harmless; open. |
-| EVAL-1 | M9, eval | All four brevity levels used the one 80-word default budget, so their replies were the same length (low 74, extreme 71). Fixed: each level has its own default (low 150, medium 110, high 80, extreme 40); `minimal.maxWords` now defaults to null, and a number set there still wins. Rerun M9. |
-| EVAL-2 | M10, eval | With `maxWords=30` the reply had 53 words, padded with S and Q items nobody asked for. Fixed: when the budget is 40 words or fewer, the rules say to add no suggestions or questions the user did not ask for. Rerun M10. |
+| EVAL-1 | M9, eval | All four brevity levels used the one 80-word default budget, so their replies were the same length (low 74, extreme 71). Fixed: each level has its own default (low 150, medium 110, high 80, extreme 40); `minimal.maxWords` now defaults to null, and a number set there still wins. M9 passes. |
+| EVAL-2 | M10, eval | With `maxWords=30` the reply had 53 words, padded with S and Q items nobody asked for. Fixed: when the budget is 40 words or fewer, the rules call it a hard cap to count before sending, with no extra tips, and say to add no suggestions or questions the user did not ask for; the digest repeats the hard cap. M10 passes. |
 
 ## How to run the auto cases
 
@@ -360,7 +360,7 @@ Run with `npm run evals -- --agent <agent>` (`tools/evals.mjs`, see `evals/READM
 | M7 | Pass | build kept; confirmation handed back in full sentences |
 | M8 | Pass | A1-A3, then A4 after `/compact` |
 | M9 | Pass (rerun) | first run low 74, medium 78, high 61, extreme 71 (EVAL-1); after the fix 118 → 96 → 78 → 33 |
-| M10 | Fail (rerun) | first run 53 words with unasked S and Q items (EVAL-2); after the fix 42 words, no items, still over 30 |
+| M10 | Pass (rerun) | first run 53 words with unasked S and Q items (EVAL-2); 42 after the first fix; 26 and 27 after the hard-cap wording |
 | M11 | Pass | table kept (allowed, not required); wordy cells |
 | M12 | Pass | no items or headings; 38 words |
 | M13 | Fail | longest sentence 10 words for A1's 8; average 5.7 (near) |
