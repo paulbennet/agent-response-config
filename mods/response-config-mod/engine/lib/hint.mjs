@@ -10,6 +10,14 @@ const LEVELS = {
   extreme: 'Result first, then stop. Fragments are fine. One line unless artefacts or items are needed. No explanation unless asked.',
 };
 
+// Default prose budget per level; an explicit minimal.maxWords wins.
+export const LEVEL_WORDS = { low: 150, medium: 110, high: 80, extreme: 40 };
+
+export const wordBudget = (minimal) => minimal.maxWords ?? LEVEL_WORDS[minimal.level] ?? LEVEL_WORDS.high;
+
+// Under a tight budget the model fills it with suggestions and questions nobody asked for.
+const TIGHT_WORDS = 40;
+
 const PRESERVE_TEXT = {
   code: 'code blocks',
   commands: 'shell commands',
@@ -82,7 +90,11 @@ export function renderRules(cfg) {
     const keep = (cfg.minimal.preserve ?? []).map((k) => PRESERVE_TEXT[k]).filter(Boolean);
     lines.push('BREVITY');
     lines.push(`- ${LEVELS[cfg.minimal.level]}`);
-    lines.push(`- Prose budget: at most ${cfg.minimal.maxWords} words outside artefacts, the items included. Add a table or code block only when the request needs one.`);
+    const budget = wordBudget(cfg.minimal);
+    lines.push(`- Prose budget: at most ${budget} words outside artefacts, the items included. Add a table or code block only when the request needs one.`);
+    const unasked = cfg.structured.on && budget <= TIGHT_WORDS
+      ? ['suggestions', 'questions'].filter((x) => cfg.structured.sections.includes(x)) : [];
+    if (unasked.length) lines.push(`- Add no ${unasked.join(' or ')} the user did not ask for.`);
     if (keep.length) lines.push(`- Never shorten or alter these artefacts: ${keep.join(', ')}.`);
     lines.push(
       '- Exceptions, always full length: error messages, failing test output, security warnings, confirmations before destructive actions, and anything the user explicitly asks to have explained in detail.',
@@ -157,7 +169,7 @@ export function renderSessionHint(cfg, ledger, { notes = [] } = {}) {
 export function renderDigest(cfg) {
   if (!cfg.enabled) return '';
   const parts = [];
-  if (cfg.minimal.on) parts.push(`brevity ${cfg.minimal.level}, at most ${cfg.minimal.maxWords} prose words with the items, artefacts verbatim, errors in full`);
+  if (cfg.minimal.on) parts.push(`brevity ${cfg.minimal.level}, at most ${wordBudget(cfg.minimal)} prose words with the items, artefacts verbatim, errors in full`);
   if (cfg.structured.on) {
     const s = cfg.structured.sections;
     const ids = s.map((x) => `${x[0].toUpperCase()}1`).join('/');

@@ -11,7 +11,7 @@ Reduce prose. Never reduce artefacts.
 | high (default) | Result first in 1-3 short sentences. No narration, hedging or recap. Drop any sentence that does not change what the reader does next. | 1-3 sentences |
 | extreme | Result first, then stop. Fragments allowed. One line unless items or artefacts are needed. | 1 line |
 
-`minimal.maxWords` is a hard cap on prose words outside artefacts. Items (A/S/Q/D) count toward the cap.
+Each level has a default prose budget: low 150, medium 110, high 80, extreme 40 words. `minimal.maxWords` replaces it with a hard cap of its own; null (the default) uses the level's budget. The budget counts prose outside artefacts, items (A/S/Q/D) included. At 40 words or fewer, add no suggestions or questions the user did not ask for.
 
 ## Artefacts (kept verbatim)
 

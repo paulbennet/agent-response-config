@@ -12,7 +12,7 @@ import {
 } from './engine'
 import type { Dollar } from './engine'
 // @ts-ignore bundled plain-JS modules without declarations
-import { effectiveConfig, modeSummary } from '../engine/lib/hint.mjs'
+import { effectiveConfig, modeSummary, wordBudget } from '../engine/lib/hint.mjs'
 // @ts-ignore
 import { openItems } from '../engine/lib/core.mjs'
 
@@ -154,10 +154,12 @@ export function installUi(on: On) {
             onSelect={v => { void save($, [`enabled=${v === 'on'}`]) }} />)}
           {field('brevity', 'Brevity', <Select key="brevity" value={m.on ? m.level : 'off'} options={LEVEL_OPTIONS}
             onSelect={v => { void save($, v === 'off' ? ['minimal.on=false'] : ['minimal.on=true', `minimal.level=${v}`]) }} />)}
-          {field('maxWords', 'Max prose words', <Input key="maxWords" value={String(m.maxWords)} submitLabel="save"
+          {field('maxWords', 'Max prose words', <Input key="maxWords" value={m.maxWords == null ? '' : String(m.maxWords)}
+            placeholder={`${wordBudget(m)} for this level`} submitLabel="save"
             onSubmit={v => {
               const n = Number(v)
-              if (!Number.isInteger(n) || n < 10 || n > 1000) $.ui.toast('Enter a whole number from 10 to 1000.')
+              if (!v.trim()) void save($, ['minimal.maxWords=null'])
+              else if (!Number.isInteger(n) || n < 10 || n > 1000) $.ui.toast('Enter a whole number from 10 to 1000, or leave it empty for the level default.')
               else void save($, [`minimal.maxWords=${n}`])
             }} />)}
           {field('structured', 'Structured A/S/Q/D', <Select key="structured" value={flag(cfg.structured.on)} options={onOff}

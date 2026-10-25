@@ -143,7 +143,7 @@ export function validate(cfg) {
     } else if (BOOLS.includes(p)) {
       if (typeof v !== 'boolean') errors.push(`${p}: must be boolean`);
     } else if (p === 'minimal.maxWords') {
-      if (!Number.isInteger(v) || v < 10 || v > 1000) errors.push('minimal.maxWords: integer 10-1000');
+      if (v !== null && (!Number.isInteger(v) || v < 10 || v > 1000)) errors.push('minimal.maxWords: null or integer 10-1000');
     } else if (p === 'minimal.preserve') {
       if (!Array.isArray(v) || v.some((x) => !PRESERVE.includes(x))) errors.push('minimal.preserve: invalid list');
     } else if (p === 'structured.sections') {

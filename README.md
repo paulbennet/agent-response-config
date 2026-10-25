@@ -64,7 +64,7 @@ The JSON schema is `skills/response-config/config.schema.json`; point your edito
 | Key | Values |
 |---|---|
 | `minimal.level` | low, medium, high, extreme |
-| `minimal.maxWords` | 10 to 1000 prose words |
+| `minimal.maxWords` | 10 to 1000 prose words, or null (default) for the level's budget: low 150, medium 110, high 80, extreme 40 |
 | `minimal.preserve` | code, commands, tables, errors, paths, diffs |
 | `structured.sections` | actions, suggestions, questions, decisions |
 | `language.cefr` | A1 to C2 |

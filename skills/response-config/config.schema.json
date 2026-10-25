@@ -11,7 +11,7 @@
       "properties": {
         "on": { "type": "boolean" },
         "level": { "enum": ["low", "medium", "high", "extreme"] },
-        "maxWords": { "type": "integer", "minimum": 10, "maximum": 1000 },
+        "maxWords": { "type": ["integer", "null"], "minimum": 10, "maximum": 1000 },
         "preserve": {
           "type": "array", "uniqueItems": true,
           "items": { "enum": ["code", "commands", "tables", "errors", "paths", "diffs"] }

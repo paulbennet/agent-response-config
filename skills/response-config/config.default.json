@@ -3,7 +3,7 @@
   "minimal": {
     "on": true,
     "level": "high",
-    "maxWords": 80,
+    "maxWords": null,
     "preserve": ["code", "commands", "tables", "errors", "paths", "diffs"]
   },
   "structured": {
