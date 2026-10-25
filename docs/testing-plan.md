@@ -316,9 +316,11 @@ Turn on the VS Code hooks preview setting first.
 | L6 | The skills.sh page and README badge appear after real installs | Manual | |
 | L7 | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` | Manual, gh 2.90+ | |
 | L8 | Claude marketplace install of both plugins, as G4 and H8 | Manual | |
-| L9 | A fresh clone passes `npm test` and `npm run test:e2e` | Manual | |
+| L9 | A fresh clone passes `npm test` and `npm run test:e2e` | Manual | Pass (clone of `d2c6b51`: 66 tests; e2e 27/28, STY-2 known) |
 
-L5 and L6 send install telemetry, which is what lists the repo on skills.sh.
+L5 and L6 send install telemetry, which is what lists the repo on skills.sh. L5 to L8 run after the repo is made public.
+
+Before publishing, 2026-10-26: the full history has no tokens, keys or passwords; the only machine path is a quoted example in `docs/review-0.1.0.md`; every commit carries the author email.
 
 ## M. Reply quality evals
 
