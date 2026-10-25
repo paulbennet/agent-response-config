@@ -68,6 +68,18 @@ test('replay of live G8 retest: items without headings are tracked', () => {
   assert.deepEqual(Object.fromEntries(l.items.map((i) => [i.id, i.status])), { A1: 'done', A2: 'open', A3: 'open', Q1: 'answered', A4: 'open' });
 });
 
+test('replay of live G10: settled decisions and Resolved with a note', () => {
+  const e = env();
+  const stop = (msg) => run({ agent: 'claude', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: msg }, env: e });
+  stop('## Actions\n- A2 Add the config\n- A4 Run A1 again\n\n## Decisions\n- D1 Which config should A2 create? (a) plain JavaScript (b) TypeScript');
+  stop('Created it.\n\n- A2 done\n- D1 assumed (a), plain JavaScript\n\n## Actions\n- A6 Run npm init\n\nResolved: A4 (replaced by A6)');
+  const l = loadLedger('claude', 's', e);
+  const d1 = l.items.find((i) => i.id === 'D1');
+  assert.deepEqual([d1.status, d1.answer], ['answered', '(a), plain JavaScript']);
+  assert.match(d1.text, /^Which config/);
+  assert.deepEqual(Object.fromEntries(l.items.map((i) => [i.id, i.status])), { A2: 'done', A4: 'done', D1: 'answered', A6: 'open' });
+});
+
 test('codex stop prints {} and copilot formats per event', () => {
   const e = env();
   assert.equal(run({ agent: 'codex', event: 'stop', input: { session_id: 's', cwd: e.dir, last_assistant_message: 'x' }, env: e }), '{}');

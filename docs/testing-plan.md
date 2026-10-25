@@ -49,6 +49,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | PARSE-2 | G8, live | `- A1 done: installed eslint` and `- Q1 answered: yes` were read as new items with the same ID, so the real items were retired as superseded and stayed open. `- A1 still open: ...` did the same. Fixed: a leading status with a note closes the item, and "still open" reopens it. Retest G8. |
 | PARSE-3 | G8, live | The reply `Q2 ok`, without a colon, was ignored. Fixed: `Q2 ok`, `D1 b` and `Q1 yes, Q2 no` are answers when they make up a whole clause. Retest G8. |
 | PARSE-4 | G8 retest, live | The model listed `- A1 ...` and `- Q1 ...` with no section headings, so nothing was tracked; `- Resolved: A1, Q1` with a list marker was also ignored. The hook then said A1 was unknown, and the model told the user the tracker was broken. Fixed: unmarked list items count when they take the next unused ID, the list-marker form of Resolved is read, the digest names the headings, and the unknown-ID note no longer invites talk about the tracker. Retest G8. |
+| PARSE-5 | G10, live | `Resolved: A4 (replaced by A6)` was ignored because of the note, and `- D1 assumed (a), plain JavaScript` left D1 open and overwrote its question text. Fixed: a note may follow the IDs, and decided, chose, picked, assumed or going with settle a question or decision, keeping its text and storing the answer. |
 
 ## How to run the auto cases
 
@@ -193,9 +194,9 @@ Use Claude Code 2.1.310 or newer in a normal terminal, not inside another Claude
 | G5 | SessionStart fires and its rules reach the model | Manual | Pass after the HOOK-1 fix. First run failed: the 2.5 s exit timer cut it off. The retest took 5.9 s on startup, a thin margin under 8 s |
 | G6 | The per-prompt hint reaches the model | Manual | Pass (sent the full rules, as D6 expects after a silent session start) |
 | G7 | Stop fills the ledger | Manual | Pass after the PARSE-1 fix (needed a reinstall: same version number, so the cache was stale) |
-| G8 | Quick replies resolve items | Manual | Model: pass. Ledger: fail, then fixed (PARSE-2, PARSE-3). Retest: fail, fixed (PARSE-4); retest |
-| G9 | After `/compact`, IDs continue | Manual | |
-| G10 | After `claude --resume`, open items come back | Manual | |
+| G8 | Quick replies resolve items | Manual | Pass after PARSE-2, PARSE-3 and PARSE-4 fixes |
+| G9 | After `/compact`, IDs continue | Manual | Pass (SessionStart:compact resent the rules; next IDs A5, D2) |
+| G10 | After `claude --resume`, open items come back | Manual | Pass (SessionStart:resume sent the open items; `A2` was understood). Ledger gaps fixed as PARSE-5 |
 | G11 | Hooks installed by `setup.mjs` instead of the plugin behave the same | Manual | |
 | G12 | Plugin and `setup.mjs` hooks both installed: does the model get the rules twice? | Manual | |
 | G13 | `claude -p "list the files here"` runs the hooks too | Manual | |

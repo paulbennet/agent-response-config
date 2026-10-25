@@ -68,7 +68,10 @@ export function registerItems(ledger, parsed) {
     const existing = ledger.items.find((i) => i.id === id);
     if (p.close) {
       // A closing line never overwrites a settled status; a settled question is "answered".
-      if (existing && isOpen(existing)) existing.status = p.close === 'done' && 'QD'.includes(p.type) ? 'answered' : p.close;
+      if (existing && isOpen(existing)) {
+        existing.status = p.close === 'done' && 'QD'.includes(p.type) ? 'answered' : p.close;
+        if (p.answer) existing.answer = p.answer;
+      }
       continue;
     }
     if (p.reopen && existing) {

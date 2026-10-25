@@ -13,8 +13,8 @@ const BARE_RE = /^\s*(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
 const LIST_LINE_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
 // "Actions", "## Questions (Q)", "**Decisions (D):**"; the rules name the headings with their letter.
 const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)(?:\s*\([ASQD]\))?\**\s*:?\s*\**\s*$/i;
-// "Resolved: A2, Q1" / "Done: A1" / "Closed: S3"
-const RESOLVED_RE = /^\s*(?:[-*+]\s+)?\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)\s*$/i;
+// "Resolved: A2, Q1" / "Done: A1" / "Closed: S3" / "Resolved: A4 (replaced by A6)"
+const RESOLVED_RE = /^\s*(?:[-*+]\s+)?\**(resolved|done|closed|answered|skipped)\**\s*:\s*((?:[ASQD]\d+[\s,;]*)+)(?:[(—–-].*)?$/i;
 const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';
 // An item whose whole text is a status: "- A2 done", "- Q1 (answered)", "- A3 ✓"
 const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]+)$`, 'i');
@@ -24,6 +24,8 @@ const TRAILING_CLOSE_RE = new RegExp(
 );
 // A status with a note: "- A1 done: installed eslint", "- Q1 answered - yes"
 const LEADING_CLOSE_RE = new RegExp(`^\\(?(${STATUS_WORD})\\)?\\s*[:—–-]\\s*\\S`, 'i');
+// A settled question or decision: "- D1 assumed (a), plain JavaScript", "- Q2 chose: no"
+const SETTLED_RE = /^(?:decided|chose|chosen|picked|assumed|going with)\b\s*[:—–-]?\s*(\S.*)$/i;
 // A reminder that an item is not finished: "- A1 still open: run npm i"
 const STILL_OPEN_RE = /^still\s+(?:open|pending|to do|not done)\s*[:—–-]?\s*(.*)$/i;
 
@@ -67,6 +69,11 @@ export function parseAssistantItems(text) {
     const leading = LEADING_CLOSE_RE.exec(body);
     if (leading) {
       items.push({ type, n, text: '', close: closeStatus(leading[1]) });
+      continue;
+    }
+    const settled = (type === 'Q' || type === 'D') && SETTLED_RE.exec(body);
+    if (settled) {
+      items.push({ type, n, text: '', close: 'answered', answer: settled[1].trim() });
       continue;
     }
     const loose = !inSection && !bold && !sep;
