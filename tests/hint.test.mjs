@@ -23,6 +23,9 @@ test('a tight budget forbids unasked suggestions and questions', () => {
   assert.match(renderRules(cfg({ minimal: { maxWords: 30 } })), unasked);
   assert.match(renderRules(cfg({ minimal: { level: 'extreme' } })), unasked);
   assert.doesNotMatch(renderRules(cfg()), unasked);
+  assert.match(renderRules(cfg({ minimal: { maxWords: 30 } })), /30 words is a hard cap/);
+  assert.match(renderDigest(cfg({ minimal: { maxWords: 30 } })), /at most 30 prose words with the items \(hard cap/);
+  assert.doesNotMatch(renderDigest(cfg()), /hard cap/);
   assert.doesNotMatch(renderRules(cfg({ minimal: { maxWords: 30 }, structured: { on: false } })), /Add no/);
   assert.match(renderRules(cfg({ minimal: { maxWords: 30 }, structured: { sections: ['actions', 'questions'] } })), /Add no questions the user/);
 });
