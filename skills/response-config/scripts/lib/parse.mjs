@@ -22,8 +22,8 @@ const CLOSING_TEXT_RE = new RegExp(`^(?:\\(?(${STATUS_WORD})\\)?\\.?|[✓✔✅]
 const TRAILING_CLOSE_RE = new RegExp(
   `\\s*(?:\\((${STATUS_WORD})\\)|\\[(${STATUS_WORD})\\]|[—–-]\\s*(${STATUS_WORD})|([✓✔✅]+))\\.?\\s*$`, 'i',
 );
-// A status with a note: "- A1 done: installed eslint", "- Q1 answered - yes"
-const LEADING_CLOSE_RE = new RegExp(`^\\(?(${STATUS_WORD})\\)?\\s*[:—–-]\\s*\\S`, 'i');
+// A status with a note: "- A1 done: installed eslint", "- Q1 answered - yes", "- Q1 skipped (replaced by Q2)"
+const LEADING_CLOSE_RE = new RegExp(`^\\(?(${STATUS_WORD})\\)?\\s*(?:[:—–-]\\s*\\S|\\()`, 'i');
 // A settled question or decision: "- D1 assumed (a), plain JavaScript", "- Q2 chose: no"
 const SETTLED_RE = /^(?:decided|chose|chosen|picked|assumed|going with)\b\s*[:—–-]?\s*(\S.*)$/i;
 // A reminder that an item is not finished: "- A1 still open: run npm i"
