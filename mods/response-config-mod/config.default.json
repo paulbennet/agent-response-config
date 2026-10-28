@@ -15,6 +15,7 @@
   },
   "language": {
     "on": false,
+    "preset": null,
     "cefr": "B2",
     "readability": null,
     "vocabulary": null,

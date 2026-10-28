@@ -17,6 +17,8 @@ import { effectiveConfig, modeSummary, wordBudget } from '../engine/lib/hint.mjs
 import { STATUS_EMOJI, applyReplies, openItems } from '../engine/lib/core.mjs'
 // @ts-ignore
 import { parseUserReplies } from '../engine/lib/parse.mjs'
+// @ts-ignore
+import { LEVEL_NAMES, PRESET_TEXT, levelOf, levelPairs, resolveLanguage, withDetach } from '../engine/lib/language.mjs'
 
 // The engine reads state statically: each file that reads or writes an atom declares it itself.
 const configAtom = atom({ plugin: 'response-config-mod', key: 'config' } as const, null, { shape: 'config-1' })
@@ -30,7 +32,9 @@ export const CONFIG_PANE = 'rc-config'
 export const ITEMS_PANE = 'rc-items'
 
 const onOff = [{ value: 'on' }, { value: 'off' }]
-const CEFR_OPTIONS = ['off', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map(value => ({ value }))
+// One select for the level: off, a CEFR level, plain language only, or a preset.
+const LEVEL_LABEL: Record<string, string> = { off: 'off', plain: 'plain language only', simple: 'simple (preset)', global: 'global (preset)', technical: 'technical (preset)' }
+const LEVEL_OPTIONS_LANG = (LEVEL_NAMES as string[]).map(value => ({ value, label: LEVEL_LABEL[value] ?? value }))
 const LEVEL_OPTIONS = ['off', 'low', 'medium', 'high', 'extreme'].map(value => ({ value }))
 const VOCAB_OPTIONS = ['none', 'basic-english', 'globish', 'ste', 'oxford-3000', 'oxford-5000', 'ngsl', 'awl'].map(value => ({ value }))
 const READ_OPTIONS = ['none', 'flesch-reading-ease', 'flesch-kincaid', 'gunning-fog', 'smog', 'coleman-liau', 'dale-chall'].map(value => ({ value }))
@@ -135,7 +139,11 @@ export function installUi(on: On) {
     const terminal = e.surface === 'terminal'
     const m = cfg.minimal
     const l = cfg.language
-    const readability = l.readability
+    // The fields as a preset sets them; changing one writes the preset out first (withDetach).
+    const shown = resolveLanguage(l)
+    const readability = shown.readability
+    const saveLang = (pairs: string[]) => save($, withDetach(l, pairs))
+    const level = levelOf(l)
     const heading = (text: string) => <Text bold dimColor size="caption">{text}</Text>
     // A label column of fixed width, then the control, so every row lines up; a pointer surface
     // also caps the control's width so a select does not stretch across the pane.
@@ -176,24 +184,25 @@ export function installUi(on: On) {
         </Box>
         <Box flexDirection="column">
           {heading('LANGUAGE')}
-          {field('cefr', 'English level (CEFR)', <Select key="cefr" value={l.on ? l.cefr ?? 'off' : 'off'} options={CEFR_OPTIONS}
-            onSelect={v => { void save($, v === 'off' ? ['language.on=false'] : ['language.on=true', `language.cefr=${v}`]) }} />)}
+          {field('cefr', 'English level', <Select key="cefr" value={level} options={LEVEL_OPTIONS_LANG}
+            onSelect={v => { void save($, levelPairs(v)) }} />,
+          PRESET_TEXT[level] && <Text dimColor>{PRESET_TEXT[level]}</Text>)}
           {field('readability', 'Readability', <Select key="readability" value={readability?.standard ?? 'none'} options={READ_OPTIONS}
             onSelect={v => {
-              void save($, v === 'none'
+              void saveLang(v === 'none'
                 ? ['language.readability=null']
-                : [`language.readability=${JSON.stringify({ standard: v, target: readability?.target ?? 8 })}`])
+                : ['language.on=true', `language.readability=${JSON.stringify({ standard: v, target: readability?.target ?? 8 })}`])
             }} />)}
           {readability && field('target-score', 'Readability target', <Input key="target-score" value={String(readability.target ?? '')} submitLabel="save"
             onSubmit={v => {
               const n = Number(v)
               if (!Number.isFinite(n)) $.ui.toast('Enter a number.')
-              else void save($, [`language.readability=${JSON.stringify({ standard: readability.standard, target: n })}`])
+              else void saveLang([`language.readability=${JSON.stringify({ standard: readability.standard, target: n })}`])
             }} />)}
-          {field('vocab', 'Vocabulary', <Select key="vocab" value={l.vocabulary ?? 'none'} options={VOCAB_OPTIONS}
-            onSelect={v => { void save($, [`language.vocabulary=${v === 'none' ? 'null' : JSON.stringify(v)}`]) }} />)}
-          {field('plain', 'Plain language', <Select key="plain" value={flag(l.plainLanguage)} options={onOff}
-            onSelect={v => { void save($, [`language.plainLanguage=${v === 'on'}`]) }} />)}
+          {field('vocab', 'Vocabulary', <Select key="vocab" value={shown.vocabulary ?? 'none'} options={VOCAB_OPTIONS}
+            onSelect={v => { void saveLang(v === 'none' ? ['language.vocabulary=null'] : ['language.on=true', `language.vocabulary=${JSON.stringify(v)}`]) }} />)}
+          {field('plain', 'Plain language', <Select key="plain" value={flag(shown.plainLanguage)} options={onOff}
+            onSelect={v => { void saveLang(v === 'on' ? ['language.on=true', 'language.plainLanguage=true'] : ['language.plainLanguage=false']) }} />)}
         </Box>
         <Box flexDirection="column">
           {heading('OUTPUT STYLE')}

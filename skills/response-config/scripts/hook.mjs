@@ -6,7 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adapters } from './lib/adapters/index.mjs';
 import { loadConfig } from './lib/config.mjs';
-import { effectiveConfig, renderPromptHint, renderSessionHint } from './lib/hint.mjs';
+import { deepMerge } from './lib/core.mjs';
+import { effectiveConfig, keptOverrides, renderPromptHint, renderSessionHint } from './lib/hint.mjs';
 import {
   applyReplies, claimEvent, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeReused,
 } from './lib/ledger.mjs';
@@ -34,8 +35,9 @@ const isPrompt = (event) => event === 'prompt' || event === 'prompt-transformed'
 // host did not fire a session-start hook again (Copilot is not documented to).
 export const RULES_EVERY = 20;
 
-// Session switches (/response-config on|off|verbose) belong to the Claude mod, which keeps them
-// in its own state. The classic hooks only apply the config files and one-turn tags.
+// Session switches (/response-config on|off|verbose|level) belong to the Claude mod, which keeps
+// them in its own state. The classic hooks apply the config files, one-turn tags, and the tags a
+// message kept for the session with !keep (stored in the ledger).
 
 export function run({ agent, event, input, env = process.env }) {
   const adapter = adapters[agent];
@@ -58,7 +60,7 @@ export function run({ agent, event, input, env = process.env }) {
         notes.push(`Output style sync failed: ${e.message}`);
       }
     }
-    const cfg = effectiveConfig(config);
+    const cfg = effectiveConfig(config, ledger?.session.overrides);
     const hint = renderSessionHint(cfg, ledger, { notes });
     if (ledger) {
       ledger.session.rulesSentAt = Date.now();
@@ -71,9 +73,17 @@ export function run({ agent, event, input, env = process.env }) {
   if (isPrompt(event)) {
     if (!config.hooks.eachPrompt) return silent();
     const parsed = config.overrides.inlineTags ? parseTags(n.prompt) : { tags: {} };
-    // Disabled: only a !on tag brings the rules back for this turn; nothing is tracked.
-    if (!config.enabled && !parsed.tags.on) return silent();
     const ledger = config.hooks.ledger ? loadLedger(agent, n.sessionId, env) : null;
+    const kept = keptOverrides(ledger?.session.overrides, parsed.tags);
+    // Disabled: only a !on tag (or one kept) brings the rules back; nothing is tracked. A !off
+    // goes on, so the hint can say the rules are off.
+    if (!deepMerge(config, kept).enabled && !parsed.tags.on && !parsed.tags.off) {
+      if (ledger && kept !== ledger.session.overrides) {
+        ledger.session.overrides = kept;
+        saveLedger(ledger, env);
+      }
+      return silent();
+    }
     const replies = config.structured.on ? parseUserReplies(n.prompt) : [];
     let resolved = [];
     let reused = [];
@@ -82,6 +92,7 @@ export function run({ agent, event, input, env = process.env }) {
     if (ledger) {
       ledger.turn += 1;
       const s = ledger.session;
+      s.overrides = kept;
       withRules = !s.rulesSentAt || ledger.turn - s.rulesTurn >= RULES_EVERY;
       resolved = applyReplies(ledger, replies);
       reused = takeReused(ledger);
@@ -91,7 +102,7 @@ export function run({ agent, event, input, env = process.env }) {
       }
       saveLedger(ledger, env);
     }
-    const cfg = effectiveConfig(config, {}, parsed.tags);
+    const cfg = effectiveConfig(config, kept, parsed.tags);
     const hint = renderPromptHint(cfg, ledger, {
       resolved, reused, withRules, problems, tags: hasTags(parsed.tags) ? parsed.tags : {},
     });
@@ -99,10 +110,12 @@ export function run({ agent, event, input, env = process.env }) {
   }
 
   if (event === 'stop') {
-    if (config.enabled && config.hooks.ledger && config.structured.on && n.lastAssistantMessage) {
+    if (config.hooks.ledger && config.structured.on && n.lastAssistantMessage) {
       const ledger = loadLedger(agent, n.sessionId, env);
-      registerItems(ledger, parseAssistantItems(n.lastAssistantMessage));
-      saveLedger(ledger, env);
+      if (deepMerge(config, ledger.session.overrides).enabled) {
+        registerItems(ledger, parseAssistantItems(n.lastAssistantMessage));
+        saveLedger(ledger, env);
+      }
     }
     return silent();
   }

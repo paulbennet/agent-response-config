@@ -10,9 +10,11 @@ import type { Dollar } from './engine'
 import { installUi, openConfigPane, openItemsPane } from './ui'
 import { firstRun, runWizard } from './wizard'
 // @ts-ignore bundled plain-JS modules without declarations
-import { applyReplies, registerItems, takeReused } from '../engine/lib/core.mjs'
+import { applyReplies, deepMerge, registerItems, takeReused } from '../engine/lib/core.mjs'
 // @ts-ignore
-import { effectiveConfig, modeSummary, renderPromptHint, renderRules } from '../engine/lib/hint.mjs'
+import { effectiveConfig, keptOverrides, modeSummary, renderPromptHint, renderRules } from '../engine/lib/hint.mjs'
+// @ts-ignore
+import { LEVEL_NAMES, levelPatch } from '../engine/lib/language.mjs'
 // @ts-ignore
 import { hasTags, parseAssistantItems, parseTags, parseUserReplies } from '../engine/lib/parse.mjs'
 
@@ -27,7 +29,7 @@ async function overrides($: Dollar) {
 
 async function setOverride($: Dollar, patch: Record<string, unknown> | null) {
   await mutateLedger($, l => {
-    l.session.overrides = patch === null ? {} : { ...l.session.overrides, ...patch }
+    l.session.overrides = patch === null ? {} : deepMerge(l.session.overrides, patch)
   })
 }
 
@@ -80,6 +82,7 @@ export const register: Register = on => {
     let reused: unknown[] = []
     await mutateLedger($, l => {
       l.turn += 1
+      l.session.overrides = keptOverrides(l.session.overrides, parsed.tags) // !keep, !reset
       resolved = applyReplies(l, replies)
       reused = takeReused(l)
     })
@@ -126,6 +129,12 @@ async function runCommand($: Dollar, args: string): Promise<{ text: string }> {
     case 'reset':
       await setOverride($, null)
       return { text: 'Session overrides cleared.' }
+    case 'level': {
+      const patch = levelPatch(rest[0])
+      if (!patch) return { text: `Use: level ${LEVEL_NAMES.join('|')}` }
+      await setOverride($, patch)
+      return { text: `English level ${rest[0]} for this session. /${commandName()} reset clears it.` }
+    }
     case 'wizard':
       void runWizard($)
       return { text: 'Wizard started.' }

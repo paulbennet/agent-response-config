@@ -35,6 +35,7 @@
       "type": "object", "additionalProperties": false,
       "properties": {
         "on": { "type": "boolean" },
+        "preset": { "enum": ["simple", "global", "technical", null] },
         "cefr": { "enum": ["A1", "A2", "B1", "B2", "C1", "C2", null] },
         "readability": {
           "oneOf": [

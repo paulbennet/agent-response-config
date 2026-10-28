@@ -1,5 +1,6 @@
 // Renders the rules text (session start, output style) and the short per-prompt hint.
 import { STATUS_EMOJI as E, deepMerge, nextIds, openItems } from './core.mjs';
+import { levelPatch, resolveLanguage } from './language.mjs';
 
 export const MAX_HINT_CHARS = 9000;
 
@@ -58,17 +59,28 @@ const VOCAB = {
 const PLAIN =
   'Plain language: active voice, short sentences, common words, address the reader as "you", main point first.';
 
+// The config patch the tags stand for. `!keep` stores the same patch as a session override.
+export function tagPatch(tags = {}) {
+  let p = {};
+  if (tags.on) p = deepMerge(p, { enabled: true });
+  if (tags.verbose) p = deepMerge(p, { minimal: { on: false } });
+  if (tags.terse) p = deepMerge(p, { minimal: { on: true } });
+  if (tags.plain) p = deepMerge(p, { language: { on: true, plainLanguage: true } });
+  if (tags.level) p = deepMerge(p, levelPatch(tags.level) ?? {});
+  if (tags.words) p = deepMerge(p, { minimal: { on: true, maxWords: tags.words } });
+  if (tags.off) p = deepMerge(p, { enabled: false });
+  return p;
+}
+
+// Session overrides after `!keep` / `!reset` tags: what the session keeps from now on.
+export function keptOverrides(overrides = {}, tags = {}) {
+  const base = tags.reset ? {} : overrides ?? {};
+  return tags.keep ? deepMerge(base, tagPatch(tags)) : base;
+}
+
 // Apply session overrides and one-turn tags on top of a loaded config.
 export function effectiveConfig(config, sessionOverrides = {}, tags = {}) {
-  let cfg = deepMerge(config, sessionOverrides ?? {});
-  if (tags.off) return { ...cfg, enabled: false };
-  if (tags.on) cfg = { ...cfg, enabled: true };
-  if (tags.verbose) cfg = deepMerge(cfg, { minimal: { on: false } });
-  if (tags.terse) cfg = deepMerge(cfg, { minimal: { on: true } });
-  if (tags.plain) cfg = deepMerge(cfg, { language: { on: true, plainLanguage: true } });
-  if (tags.level) cfg = deepMerge(cfg, { language: { on: true, cefr: tags.level } });
-  if (tags.words) cfg = deepMerge(cfg, { minimal: { on: true, maxWords: tags.words } });
-  return cfg;
+  return deepMerge(deepMerge(config, sessionOverrides ?? {}), tagPatch(tags));
 }
 
 export function modeSummary(cfg) {
@@ -76,7 +88,7 @@ export function modeSummary(cfg) {
   const parts = [];
   if (cfg.minimal.on) parts.push(`terse:${cfg.minimal.level}`);
   if (cfg.structured.on) parts.push('structured');
-  if (cfg.language.on) parts.push(cfg.language.cefr ?? 'plain');
+  if (cfg.language.on) parts.push(cfg.language.preset ?? cfg.language.cefr ?? 'plain');
   return parts.join(' ') || 'idle';
 }
 
@@ -141,12 +153,13 @@ export function renderRules(cfg) {
     }
   }
   if (cfg.language.on) {
+    const lang = resolveLanguage(cfg.language);
     lines.push('LANGUAGE');
-    if (cfg.language.cefr) lines.push(`- ${CEFR[cfg.language.cefr]}`);
-    const r = cfg.language.readability;
+    if (lang.cefr) lines.push(`- ${CEFR[lang.cefr]}`);
+    const r = lang.readability;
     if (r) lines.push(`- ${READABILITY[r.standard](r.target)}`);
-    if (cfg.language.vocabulary) lines.push(`- ${VOCAB[cfg.language.vocabulary]}`);
-    if (cfg.language.plainLanguage) lines.push(`- ${PLAIN}`);
+    if (lang.vocabulary) lines.push(`- ${VOCAB[lang.vocabulary]}`);
+    if (lang.plainLanguage) lines.push(`- ${PLAIN}`);
     lines.push('- Code, identifiers, commands and quoted output are exempt from these language limits.');
   }
   lines.push(
@@ -195,7 +208,7 @@ export function renderDigest(cfg) {
     parts.push(`summary then "- ${mark}${ids}" items under ${heads} headings only, closed items only in a Resolved line, IDs never reused`);
   }
   if (cfg.language.on) {
-    const l = cfg.language;
+    const l = resolveLanguage(cfg.language);
     const bits = [l.cefr, l.readability && `${l.readability.standard} ${l.readability.target}`, l.vocabulary, l.plainLanguage && 'plain language'];
     parts.push(`language: ${bits.filter(Boolean).join(', ')}`);
   }
@@ -215,8 +228,10 @@ export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, proble
     const digest = renderDigest(cfg);
     if (digest) lines.push(digest);
   }
-  const tagNames = Object.entries(tags).map(([k, v]) => (v === true ? `!${k}` : `!${k}=${v}`));
-  if (tagNames.length) lines.push(`Tags this turn only: ${tagNames.join(' ')}.`);
+  const tagNames = Object.entries(tags).filter(([k]) => k !== 'keep' && k !== 'reset')
+    .map(([k, v]) => (v === true ? `!${k}` : `!${k}=${v}`));
+  if (tags.reset) lines.push('Session overrides cleared (!reset).');
+  if (tagNames.length) lines.push(`${tags.keep ? 'Kept for the rest of this session' : 'Tags this turn only'}: ${tagNames.join(' ')}.`);
   if (cfg.structured.on && ledger) {
     for (const r of reused.slice(0, 4)) {
       lines.push(`Your last reply reused ${r.id} for a new item; the earlier ${r.id} (${r.text}) is no longer tracked. Never reuse IDs: take new ones from "Next IDs".`);

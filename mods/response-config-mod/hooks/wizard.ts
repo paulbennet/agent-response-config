@@ -1,9 +1,10 @@
 // First-run / on-demand setup wizard built on $.ui.ask dialogs (works on every surface).
 import { cli, commandName, refresh, save } from './engine'
 import type { Dollar } from './engine'
+// @ts-ignore bundled plain-JS module without declarations
+import { levelPairs } from '../engine/lib/language.mjs'
 
 const LEVELS = ['low', 'medium', 'high', 'extreme']
-const CEFR = ['A1', 'A2', 'B1', 'B2']
 
 async function ask($: Dollar, question: string, options: string[], header: string) {
   try {
@@ -37,17 +38,21 @@ export async function runWizard($: Dollar): Promise<boolean> {
   if (structured === undefined) return false
   pairs.push(`structured.on=${structured.startsWith('Yes')}`)
 
+  // A dialog holds at most four options, so a preset or a CEFR level is a second question.
   const language = await ask(
     $,
-    'Simplify the English? Pick a writing level, or leave it natural.',
-    ['Natural', 'A2 (very simple)', 'B1 (simple)', 'B2 (clear)'],
+    'Simplify the English? Pick a ready-made style, a CEFR level, or leave it natural.',
+    ['Natural', 'A ready-made style', 'A CEFR level (A2 to C1)'],
     'Language',
   )
   if (language === undefined) return false
   if (language === 'Natural') pairs.push('language.on=false')
   else {
-    const cefr = CEFR.find(c => language.startsWith(c)) ?? 'B2'
-    pairs.push('language.on=true', `language.cefr=${cefr}`)
+    const level = language.startsWith('A ready')
+      ? await ask($, 'Which style?', ['simple: A2, plain language, Oxford 3000 words', 'global: B1, Globish, any first language', 'technical: B2, Simplified Technical English'], 'Style')
+      : await ask($, 'Which level?', ['A2 (very simple)', 'B1 (simple)', 'B2 (clear)', 'C1 (fluent)'], 'Level')
+    if (level === undefined) return false
+    pairs.push(...levelPairs(level.split(/[ :]/)[0]))
   }
 
   const style = await ask(

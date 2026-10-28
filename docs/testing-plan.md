@@ -10,22 +10,22 @@ This plan covers every feature of the `response-config` skill and every way to i
 | Area | Auto | Manual |
 |---|---|---|
 | A. Skill package and format | 3 | 3 |
-| B. Config files and CLI | 9 | 1 |
+| B. Config files and CLI | 12 | 1 |
 | C. Item parsing and ledger | 12 | 0 |
 | D. Hook script, per agent | 10 | 0 |
 | E. Setup script | 11 | 0 |
 | F. Managed output style | 9 | 3 |
 | G. Claude Code plugin and hooks, live | 3 | 11 |
-| H. Claude mod | 7 | 13 |
+| H. Claude mod | 9 | 15 |
 | I. Codex, live | 0 | 8 |
 | J. Copilot CLI, live | 0 | 6 |
 | K. Copilot in VS Code, live | 0 | 4 |
 | L. Distribution | 4 | 5 |
 | M. Reply quality evals | 0 | 22 |
 | N. Platforms | 2 | 3 |
-| **Total** | **70** | **79** |
+| **Total** | **75** | **81** |
 
-All 70 auto cases pass except one known issue, listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
+All 75 auto cases pass except one known issue, listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
 
 ### Why the manual cases cannot run here
 
@@ -115,7 +115,10 @@ Last run: 2026-10-25, Windows 11, Node 22.23.4, Claude Code 2.1.310.
 | B7 | `--show --json` lists the watched files with their times | Auto, `npm test` | Pass |
 | B8 | `--ledger path` and `--ledger clear` | Auto, e2e CFG-3 | Pass |
 | B9 | Config folder order: `RC_CONFIG_DIR`, `XDG_CONFIG_HOME`, then `%APPDATA%\response-config` on Windows | Auto, e2e CFG-4 | Pass |
-| B10 | Ask the agent "use B1 English from now on"; it runs `config.mjs --set` and says what changed | Manual, with G, I or J | |
+| B10 | Ask the agent "use B1 English from now on"; it runs `config.mjs --level B1` and says what changed | Manual, with G, I or J | |
+| B11 | `--level`, `--vocab` and `--readability` set the language block in one step; bad values are refused | Auto, `npm test` | Pass |
+| B12 | A preset wins on its fields; changing one writes the preset out and clears it | Auto, `npm test` | Pass |
+| B13 | `!level=<x> !keep` reaches later prompts through the hooks until `!reset` | Auto, `npm test` | Pass |
 
 ## C. Item parsing and ledger
 
@@ -261,6 +264,8 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H20 | The same in the VS Code extension | Manual | Pass (band, items pane and buttons work) |
 | H21 | Bulk select: x or the box picks items; the bar's Done, Skip and Do send one reply for all of them, the picked items leave the pane, and the pick clears | Auto, mod test | Pass after the MOD-3 fix |
 | H22 | The same live in the terminal, desktop and VS Code | Manual | |
+| H23 | `/response-config level <x>` and `!keep` set a session level; the pane's level select saves a preset in one pick | Auto, mod test | Pass |
+| H24 | The level select, preset fields and wizard language steps live | Manual | |
 
 **H16 steps.** Install both plugins and start with `--debug`. Pass when the classic hooks print nothing for this session. The mod's rules are in the system prompt instead.
 

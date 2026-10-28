@@ -47,9 +47,29 @@ Ask the agent ("make replies terser", "use B1 English") or run the CLI:
 
 ```
 node <skill-dir>/scripts/config.mjs --show
-node <skill-dir>/scripts/config.mjs --set minimal.level=medium --set language.on=true --set language.cefr=B1
+node <skill-dir>/scripts/config.mjs --set minimal.level=medium
 node <skill-dir>/scripts/config.mjs --set minimal.maxWords=60 --project
 ```
+
+### English level
+
+One word sets the level and switches language on: a CEFR level, `plain` (plain language only), a preset, or `off`.
+
+```
+node <skill-dir>/scripts/config.mjs --level B1
+node <skill-dir>/scripts/config.mjs --level simple
+node <skill-dir>/scripts/config.mjs --readability flesch-kincaid=8 --vocab ste
+```
+
+| Preset | Sets |
+|---|---|
+| `simple` | A2, plain language, Oxford 3000 words |
+| `global` | B1, Globish words, for readers of any first language |
+| `technical` | B2, Simplified Technical English (ASD-STE100) |
+
+A preset wins on the fields it sets; readability and the other fields still apply. Changing one of its fields (`--vocab`, `--set language.cefr=...`, the config pane) writes the preset's fields out and clears it, so the change takes effect.
+
+For this session only: `!level=B1 !keep` in a message (any agent with the hooks), or `/response-config level B1` with the Claude mod. `!reset` or `/response-config reset` drops it. `!keep` works for every tag: `!words=40 !keep`.
 
 Files, later wins per key:
 
@@ -58,8 +78,8 @@ Files, later wins per key:
 | defaults | `skills/response-config/config.default.json` |
 | user | `~/.config/response-config/config.json` (Windows: `%APPDATA%\response-config\config.json`) |
 | project | `.response-config.json` in the repo (found by walking up from the working directory; `--project` edits that file, or creates one at the git root) |
-| session | `/response-config on\|off\|verbose\|terse` (Claude mod only) |
-| one turn | `!verbose`, `!plain`, `!level=B1`, `!words=40`, `!off` in your message |
+| session | `!keep` after any tags in a message (hooks or mod); `/response-config on\|off\|verbose\|terse\|level <x>` (Claude mod); `!reset` clears |
+| one turn | `!verbose`, `!plain`, `!level=B1` (or a preset), `!words=40`, `!off` in your message |
 
 The JSON schema is `skills/response-config/config.schema.json`; point your editor at it with `"$schema"`.
 
@@ -70,6 +90,7 @@ The JSON schema is `skills/response-config/config.schema.json`; point your edito
 | `minimal.preserve` | code, commands, tables, errors, paths, diffs |
 | `structured.sections` | actions, suggestions, questions, decisions |
 | `structured.statusEmoji` | true (default) or false: status emojis on items and in the Resolved line |
+| `language.preset` | simple, global, technical, or null; wins on the fields it sets |
 | `language.cefr` | A1 to C2 |
 | `language.readability` | `{standard, target}`; flesch-reading-ease, flesch-kincaid, gunning-fog, smog, coleman-liau, dale-chall |
 | `language.vocabulary` | basic-english, globish, ste, oxford-3000, oxford-5000, ngsl, awl |

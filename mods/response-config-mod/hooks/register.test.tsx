@@ -66,6 +66,11 @@ function engine(on: any, seen: { submitted?: any; runs?: string[][]; taken?: str
   on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
 }
 
+// A typed /command from the composer, as the engine runs it.
+const command = (name: string, args: string) => ({
+  command: name, args, origin: { kind: 'composer' as const }, presentation: { isFullscreen: false, columns: 80 },
+})
+
 const turn = (answer: string, reason: 'answer' | 'aborted' = 'answer') => ({
   answer, durationMs: 1, isAborted: reason === 'aborted', turnId: `t-${Math.random()}`, reason,
 })
@@ -170,7 +175,7 @@ test('/response-config taken by the plugin skill: the mod serves /response-confi
   const seen: { submitted?: any; taken?: string[] } = { taken: ['response-config'] }
   engine(on, seen)
   await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
-  const { text } = await $.command.run({ command: 'response-config-mod', args: '' })
+  const { text } = await $.command.run(command('response-config-mod', ''))
   expect(text).toMatch(/^response-config: /)
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   expect(String(seen.submitted.context?.[0])).toMatch(/\[response-config\]/)
@@ -203,4 +208,23 @@ test('bulk select: picked items share one reply, and d/s/o act on the pick (note
   await desk.press({ plugin: 'response-config-mod', key: 'bulk-done' })
   expect(seen.submitted.text).toBe('done A2, S1')
   await desk.unmount()
+})
+
+test('level: /response-config level and !keep set a session level; the pane saves a preset in one pick (notes A4)', async ($, on) => {
+  const seen: { submitted?: any; runs?: string[][] } = {}
+  engine(on, seen)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
+  expect((await $.command.run(command('response-config', 'level b1'))).text).toMatch(/English level b1 for this session/)
+  expect((await $.command.run(command('response-config', 'level Z9'))).text).toMatch(/^Use: level off\|A1/)
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(String(seen.submitted.context?.[0])).toMatch(/mode: terse:high structured B1/)
+  await $.prompt.submit({ text: 'from now on !level=simple !keep', wait: false, origin: { kind: 'composer' } })
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(String(seen.submitted.context?.[0])).toMatch(/structured simple/)
+  const pane = await $.ui.mount({ ...ITEMS, requestId: 'rc-config', props: { ...ITEMS.props, title: 'Response config' }, surface: 'desktop' })
+  await pane.select({ key: 'cefr', value: 'technical' })
+  const set = (seen.runs ?? []).find(a => a.includes('--set') && a.some(x => x.startsWith('language.preset=')))
+  expect(set).toContain('language.preset="technical"')
+  expect(set).toContain('language.on=true')
+  await pane.unmount()
 })

@@ -76,7 +76,9 @@ Resolved: ✅ <done IDs>, 💬 <answered>, ⏭️ <skipped>
 
 Code, identifiers, commands and quoted output are exempt from level limits. When fields conflict, the stricter one wins.
 
-**One-turn tags** in the user message apply to that turn only: `!verbose` (full detail), `!plain` (plain language), `!level=B1`, `!words=40`, `!off` (ignore all rules), `!on`, `!terse`. Tags that look like shell commands (`!ls`) are not tags.
+**Language presets.** `language.preset` names a bundle that wins on the fields it sets: `simple` (A2, plain language, Oxford 3000), `global` (B1, Globish), `technical` (B2, Simplified Technical English). Other set fields, such as `readability`, still apply.
+
+**One-turn tags** in the user message apply to that turn only: `!verbose` (full detail), `!plain` (plain language), `!level=B1` (or `!level=simple|global|technical|plain|off`), `!words=40`, `!off` (ignore all rules), `!on`, `!terse`. With the hooks or the Claude mod, `!keep` keeps the message's other tags for the rest of the session and `!reset` drops them. Tags that look like shell commands (`!ls`) are not tags.
 
 ## 3. Change settings when the user asks
 
@@ -84,13 +86,15 @@ Edit settings with the CLI, never by hand-writing JSON:
 
 ```
 node <skill-dir>/scripts/config.mjs --set minimal.level=medium
-node <skill-dir>/scripts/config.mjs --set language.on=true --set language.cefr=B1
+node <skill-dir>/scripts/config.mjs --level B1
 node <skill-dir>/scripts/config.mjs --set minimal.maxWords=60 --project
 ```
 
+For the English level use `--level` with a CEFR level, `plain`, a preset (`simple`, `global`, `technical`) or `off`; `--readability <standard>=<target>|off` and `--vocab <list>|off` set the others. Each switches language on, and a change under a preset keeps the preset's other fields. If the user wants a level only for now, suggest `!level=B1 !keep` (or `/response-config level B1` with the Claude mod) instead of saving it.
+
 `--project` writes the project's `.response-config.json` (the one in effect, else a new one at the git root; shared with the repo); the default writes the user file. Keys are in [config.schema.json](config.schema.json). Tell the user what changed.
 
-Valid values: `minimal.level` low|medium|high|extreme; `language.cefr` A1..C2; `language.vocabulary` basic-english|globish|ste|oxford-3000|oxford-5000|ngsl|awl; `language.readability` `{"standard":"flesch-kincaid","target":8}` with standard flesch-reading-ease|flesch-kincaid|gunning-fog|smog|coleman-liau|dale-chall.
+Valid values: `minimal.level` low|medium|high|extreme; `language.preset` simple|global|technical|null; `language.cefr` A1..C2; `language.vocabulary` basic-english|globish|ste|oxford-3000|oxford-5000|ngsl|awl; `language.readability` `{"standard":"flesch-kincaid","target":8}` with standard flesch-reading-ease|flesch-kincaid|gunning-fog|smog|coleman-liau|dale-chall.
 
 ## 4. Install hooks (opt-in)
 

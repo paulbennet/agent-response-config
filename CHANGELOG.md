@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- English level in one step: `config.mjs --level B1|plain|simple|global|technical|off`, `--readability flesch-kincaid=8|off` and `--vocab ste|off`, each switching language on. The skill tells agents to use them.
+- Language presets in `language.preset`: `simple` (A2, plain language, Oxford 3000), `global` (B1, Globish), `technical` (B2, Simplified Technical English). A preset wins on the fields it sets; changing one of them writes the preset out and clears it, so the change is not hidden.
+- Session level: `!keep` keeps a message's other tags for the rest of the session (hooks and mod; the hooks store it in the ledger), `!reset` drops them. `!level=` also takes the presets, `plain` and `off`. The mod adds `/response-config level <x>`.
+- Mod: the config pane has one English level select (off, A1 to C2, plain, presets) with the preset's fields shown in the fields below it; the wizard offers the presets and C1.
+
 - Finished or settled items are no longer listed under their sections, not even as a recap. The rules ask for one line after the sections: `Resolved: ✅ A2, 💬 Q1, ⏭️ S1`.
 - Status emojis: items start with 🔵 open or ⏳ in progress; the Resolved line marks ✅ done, 💬 answered, ⏭️ skipped. New option `structured.statusEmoji` (default true). The hooks read an emoji before or after the ID with the option on or off; `- ⏳ A1 text` marks A1 in progress.
 - Mod: the items pane shows each item's status emoji before its ID, the band counts in-progress items (⏳), and the config pane has a Status emojis switch.

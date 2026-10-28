@@ -188,8 +188,9 @@ export function parseUserReplies(text) {
 }
 
 // Tags must stand alone: preceded by start or whitespace, followed by end, whitespace or punctuation.
+// !keep keeps the message's other tags for the rest of the session; !reset clears what was kept.
 const TAG_RE =
-  /(?<=^|\s)!(?:(verbose|plain|off|on|terse)|level=([A-Ca-c][12])|words=(\d{2,4}))(?=$|[\s.,;:!?])[ \t]?/g;
+  /(?<=^|\s)!(?:(verbose|plain|off|on|terse|keep|reset)|level=([A-Ca-c][12]|simple|global|technical|plain|off)|words=(\d{2,4}))(?=$|[\s.,;:!?])[ \t]?/g;
 
 // Removes only the tags (and one following space). Everything else, indentation included, is untouched.
 export function parseTags(text) {
@@ -197,7 +198,7 @@ export function parseTags(text) {
   const source = String(text ?? '');
   const stripped = source.replace(TAG_RE, (all, name, level, words) => {
     if (name) tags[name] = true;
-    if (level) tags.level = level.toUpperCase();
+    if (level) tags.level = /^[A-Ca-c][12]$/.test(level) ? level.toUpperCase() : level;
     if (words) tags.words = Number(words);
     return '';
   });

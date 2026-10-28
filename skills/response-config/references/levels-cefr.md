@@ -11,6 +11,16 @@ Write so a reader at the chosen level understands without help. CEFR describes l
 | C1 | Natural length and variety | Wide, precise vocabulary | Full range | Padding, vague words |
 | C2 | No limit | No limit | No limit | Padding; keep it economical |
 
+## Presets
+
+`language.preset` bundles a level with a word list; set one with `config.mjs --level <name>`.
+
+| Preset | CEFR | Also |
+|---|---|---|
+| `simple` | A2 | plain language, Oxford 3000 words |
+| `global` | B1 | Globish words, for readers of any first language |
+| `technical` | B2 | Simplified Technical English (ASD-STE100) |
+
 ## Rules for every level
 
 - One idea per sentence at A1-B1.

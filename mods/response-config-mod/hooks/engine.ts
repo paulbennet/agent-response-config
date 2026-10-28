@@ -38,7 +38,7 @@ export async function registerCommand($: Dollar): Promise<string | null> {
       await $.command.register({
         name,
         description: 'Configure terse, structured, level-controlled replies',
-        argumentHint: '[on|off|verbose|terse|reset|wizard|pane|items|style sync|activate|status]',
+        argumentHint: '[on|off|verbose|terse|level <B1|simple|...>|reset|wizard|pane|items|style sync|activate|status]',
       })
       command = name
       return name

@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deepMerge, isObj } from './core.mjs';
+import { PRESETS } from './language.mjs';
 
 export { deepMerge };
 
@@ -109,6 +110,7 @@ export const projectConfigTarget = (cwd, env = process.env) =>
 const ENUMS = {
   'minimal.level': ['low', 'medium', 'high', 'extreme'],
   'language.cefr': ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', null],
+  'language.preset': [...Object.keys(PRESETS), null],
   'language.vocabulary': ['basic-english', 'globish', 'ste', 'oxford-3000', 'oxford-5000', 'ngsl', 'awl', null],
   'claude.outputStyle.scope': ['user', 'project'],
 };
