@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deepMerge, loadDefaults, validate } from '../skills/response-config/scripts/lib/config.mjs';
 import { emptyLedger } from '../skills/response-config/scripts/lib/core.mjs';
-import { renderDigest, renderPromptHint, renderRules } from '../skills/response-config/scripts/lib/hint.mjs';
+import { renderDigest, renderPromptHint, renderRules, renderSessionHint } from '../skills/response-config/scripts/lib/hint.mjs';
 
 const cfg = (over = {}) => deepMerge(loadDefaults(), over);
 const budget = (c) => Number(renderRules(c).match(/at most (\d+) words/)[1]);
@@ -41,4 +41,21 @@ test('Next IDs offers only the configured section types', () => {
   const c = cfg({ structured: { sections: ['actions', 'questions'] } });
   assert.match(renderPromptHint(c, emptyLedger('claude', 's')), /Next IDs: A1 Q1$/m);
   assert.match(renderPromptHint(cfg(), emptyLedger('claude', 's')), /Next IDs: A1 S1 Q1 D1$/m);
+});
+
+test('closed items go only in a Resolved line; status emojis follow structured.statusEmoji (notes A1, A2)', () => {
+  const on = renderRules(cfg());
+  assert.match(on, /Never list a finished or settled item under its section again/);
+  assert.match(on, /"- 🔵 A1 text"/);
+  assert.match(on, /🔵 open, ⏳ in progress/);
+  assert.match(on, /"Resolved: ✅ A2, 💬 Q1, ⏭️ S1"/);
+  assert.match(renderDigest(cfg()), /"- 🔵 A1\/S1\/Q1\/D1" items .* closed items only in a Resolved line/);
+  const off = renderRules(cfg({ structured: { statusEmoji: false } }));
+  assert.match(off, /"- A1 text"/);
+  assert.match(off, /"Resolved: A2, Q1 \(answered\), S1 \(skipped\)"/);
+  assert.doesNotMatch(off, /🔵|✅/);
+  const l = emptyLedger('claude', 's');
+  l.items.push({ id: 'A1', type: 'A', n: 1, text: 'Run lint', status: 'in-progress', turn: 0 });
+  assert.match(renderSessionHint(cfg(), l), /^- ⏳ A1: Run lint$/m);
+  assert.match(renderSessionHint(cfg({ structured: { statusEmoji: false } }), l), /^- A1 \(in progress\): Run lint$/m);
 });

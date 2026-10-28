@@ -1,5 +1,5 @@
 // Renders the rules text (session start, output style) and the short per-prompt hint.
-import { deepMerge, nextIds, openItems } from './core.mjs';
+import { STATUS_EMOJI as E, deepMerge, nextIds, openItems } from './core.mjs';
 
 export const MAX_HINT_CHARS = 9000;
 
@@ -109,9 +109,11 @@ export function renderRules(cfg) {
     const sections = cfg.structured.sections;
     for (const s of sections) lines.push(`  ${SECTION_LABEL[s]}`);
     if (sections.length < 4) lines.push('- Use only these sections. What would go in another section goes in the summary.');
+    const emoji = cfg.structured.statusEmoji;
     lines.push(
-      '- One bullet per item, written "- A1 text", under its section heading. Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.',
+      `- One bullet per item, written "- ${emoji ? `${E.open} ` : ''}A1 text", under its section heading. Number each type separately (A, S, Q, D) with counters that never reset and never reuse an ID in this session.`,
     );
+    if (emoji) lines.push(`- Start each item with its status: ${E.open} open, ${E['in-progress']} in progress.`);
     lines.push(
       cfg.structured.showEmptySections
         ? '- Show every section, writing "none" when empty.'
@@ -128,7 +130,10 @@ export function renderRules(cfg) {
     if (sections.includes('decisions')) {
       lines.push('- When the user asks which option to take, or a choice is theirs to make, put it under Decisions and mark your pick "(recommended)". Do not settle it in the summary.');
     }
-    lines.push('- When you finish or settle an item, close it with a line "- A2 done" (or answered/skipped), or "Resolved: A2, Q1". Never add an item only to close it in the same reply.');
+    const resolvedLine = emoji
+      ? `"Resolved: ${E.done} A2, ${E.answered} Q1, ${E.skipped} S1" (${E.done} done, ${E.answered} answered, ${E.skipped} skipped)`
+      : '"Resolved: A2, Q1 (answered), S1 (skipped)"';
+    lines.push(`- Never list a finished or settled item under its section again, not even as a recap. Close it in one line after the sections: ${resolvedLine}. Never add an item only to close it in the same reply.`);
     if (cfg.structured.replyHint) {
       lines.push(
         '- The user may reply by ID: "A2" or "do A2", "done A1", "skip S1", "Q1: yes", "D3: b". Treat these as answers to those items.',
@@ -150,9 +155,11 @@ export function renderRules(cfg) {
   return lines.join('\n');
 }
 
-function itemLines(ledger, limit = 12) {
+function itemLines(ledger, emoji, limit = 12) {
   const open = openItems(ledger);
-  const shown = open.slice(-limit).map((i) => `- ${i.id}${i.status === 'in-progress' ? ' (in progress)' : ''}: ${i.text}`);
+  const shown = open.slice(-limit).map((i) => (emoji
+    ? `- ${E[i.status]} ${i.id}: ${i.text}`
+    : `- ${i.id}${i.status === 'in-progress' ? ' (in progress)' : ''}: ${i.text}`));
   const more = open.length - shown.length;
   if (more > 0) shown.push(`- ... and ${more} older open item(s)`);
   return shown;
@@ -163,7 +170,7 @@ const cap = (s) => (s.length > MAX_HINT_CHARS ? `${s.slice(0, MAX_HINT_CHARS - 2
 export function renderSessionHint(cfg, ledger, { notes = [] } = {}) {
   const out = ['[response-config] Follow these rules for every reply in this session.', renderRules(cfg)];
   if (cfg.enabled && cfg.structured.on && ledger) {
-    const open = itemLines(ledger);
+    const open = itemLines(ledger, cfg.structured.statusEmoji);
     if (open.length) out.push('OPEN ITEMS from earlier turns:', ...open);
     out.push(`Next IDs: ${nextIds(ledger, cfg.structured.sections)}`);
   }
@@ -184,7 +191,8 @@ export function renderDigest(cfg) {
     const s = cfg.structured.sections;
     const ids = s.map((x) => `${x[0].toUpperCase()}1`).join('/');
     const heads = s.map((x) => x[0].toUpperCase() + x.slice(1)).join('/');
-    parts.push(`summary then "- ${ids}" items under ${heads} headings only, IDs never reused`);
+    const mark = cfg.structured.statusEmoji ? `${E.open} ` : '';
+    parts.push(`summary then "- ${mark}${ids}" items under ${heads} headings only, closed items only in a Resolved line, IDs never reused`);
   }
   if (cfg.language.on) {
     const l = cfg.language;

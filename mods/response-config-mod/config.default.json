@@ -10,7 +10,8 @@
     "on": true,
     "sections": ["actions", "suggestions", "questions", "decisions"],
     "showEmptySections": false,
-    "replyHint": true
+    "replyHint": true,
+    "statusEmoji": true
   },
   "language": {
     "on": false,

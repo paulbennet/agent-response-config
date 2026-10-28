@@ -14,14 +14,16 @@ An agent skill that makes replies **short**, **structured** and **easy to answer
 Moved the parser into `lib/parse.ts`; tests pass.
 
 Actions
-- A1 Run `npm run lint` before committing.
+- 🔵 A2 Run `npm run lint` before committing.
 Questions
-- Q1 Keep the old `--legacy` flag? (yes/no)
+- 🔵 Q1 Keep the old `--legacy` flag? (yes/no)
 Decisions
-- D1 Error format: (a) JSON (b) plain text
+- 🔵 D1 Error format: (a) JSON (b) plain text
+
+Resolved: ✅ A1
 ```
 
-Reply with `Q1: yes, D1: a, done A1, skip S2` (also `please do A2`, `A1 done`). IDs count up per type for the whole session. The agent closes items it finished with `- A1 done` or `Resolved: A1, Q1`.
+Reply with `Q1: yes, D1: a, done A1, skip S2` (also `please do A2`, `A1 done`). IDs count up per type for the whole session. Each item starts with its status, 🔵 open or ⏳ in progress. A finished item is not listed again; the agent closes it in one line, `Resolved: ✅ A1, 💬 Q1, ⏭️ S1` (done, answered, skipped). `structured.statusEmoji=false` drops the emojis.
 
 Every part has an on/off switch. Hooks, a Claude output style and a Claude mod are optional extras.
 
@@ -67,6 +69,7 @@ The JSON schema is `skills/response-config/config.schema.json`; point your edito
 | `minimal.maxWords` | 10 to 1000 prose words, or null (default) for the level's budget: low 150, medium 110, high 80, extreme 40 |
 | `minimal.preserve` | code, commands, tables, errors, paths, diffs |
 | `structured.sections` | actions, suggestions, questions, decisions |
+| `structured.statusEmoji` | true (default) or false: status emojis on items and in the Resolved line |
 | `language.cefr` | A1 to C2 |
 | `language.readability` | `{standard, target}`; flesch-reading-ease, flesch-kincaid, gunning-fog, smog, coleman-liau, dale-chall |
 | `language.vocabulary` | basic-english, globish, ste, oxford-3000, oxford-5000, ngsl, awl |

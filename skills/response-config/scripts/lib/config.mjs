@@ -117,7 +117,7 @@ const PRESERVE = ['code', 'commands', 'tables', 'errors', 'paths', 'diffs'];
 const SECTIONS = ['actions', 'suggestions', 'questions', 'decisions'];
 const BOOLS = [
   'enabled', 'minimal.on', 'structured.on', 'structured.showEmptySections', 'structured.replyHint',
-  'language.on', 'language.plainLanguage', 'hooks.sessionStart', 'hooks.eachPrompt', 'hooks.ledger',
+  'structured.statusEmoji', 'language.on', 'language.plainLanguage', 'hooks.sessionStart', 'hooks.eachPrompt', 'hooks.ledger',
   'overrides.inlineTags', 'claude.outputStyle.manage', 'claude.outputStyle.activate',
 ];
 

@@ -6,14 +6,28 @@
 <summary: what happened, 1-3 short sentences>
 
 Actions
-- A1 <imperative, one step>
+- 🔵 A1 <imperative, one step>
 Suggestions
-- S1 <optional, user decides>
+- 🔵 S1 <optional, user decides>
 Questions
-- Q1 <needs an answer> (yes/no)
+- 🔵 Q1 <needs an answer> (yes/no)
 Decisions
-- D1 <choice to make> (a) <option> (b) <option>
+- 🔵 D1 <choice to make> (a) <option> (b) <option>
+
+Resolved: <closed IDs, see below>
 ```
+
+## Status emojis
+
+| Emoji | Status | Where |
+|---|---|---|
+| 🔵 | open | before the ID of a listed item |
+| ⏳ | in progress | before the ID of a listed item |
+| ✅ | done | in the Resolved line |
+| 💬 | answered | in the Resolved line |
+| ⏭️ | skipped | in the Resolved line |
+
+With `structured.statusEmoji` false, items carry no emoji. The hooks read an emoji before or after the ID either way: `- ✅ A2 text` closes A2, `- ⏳ A1 text` marks A1 in progress.
 
 ## Item types
 
@@ -28,23 +42,20 @@ Decisions
 
 - One counter per letter. Never reset, never reuse, even when an item is resolved.
 - Continue from the highest ID seen in the conversation. If a hook supplied "Next IDs: A3 S2 Q1 D1", use those.
-- One item per list line, starting `- A1 `, under its section heading. Text on the same line. No sub-bullets that start with an ID pattern.
+- One item per list line, starting `- 🔵 A1 ` (or `- A1 ` without emojis), under its section heading. Text on the same line. No sub-bullets that start with an ID pattern.
 - Outside a section heading only a marked ID counts (`- A1: text`, `- **A1** text`), so numbered prose such as `1. Q3 2026 revenue` is not an item.
-- Re-listing an item from an earlier turn keeps its original ID; do not renumber. A recap of a finished item may say so: `- A1 Run tests (done)`.
+- Re-listing an open item from an earlier turn keeps its original ID; do not renumber. Never re-list a finished item.
 - If you reuse an ID for a different item anyway, the new item takes that ID and the earlier one is no longer tracked; the hook tells you on the next turn.
 
 ## Closing items
 
-When an item is finished or settled, close it so it leaves the open list:
+When an item is finished or settled, do not list it under its section again. Close it in one line after the sections, so it leaves the open list:
 
 ```
-- A2 done
-- Q1 answered
-- A3 Update the changelog (done)
-Resolved: S1, D2
+Resolved: ✅ A2, 💬 Q1, ⏭️ S1
 ```
 
-A trailing `(done)`, `(completed)`, `[done]`, `- done` or `✓` closes the item too.
+Without emojis: `Resolved: A2, Q1 (answered), S1 (skipped)`. The hooks also read older forms, such as `- A2 done`, `- A3 Update the changelog (done)` or a trailing `[done]`, `- done` or `✓`.
 
 ## Quick replies from the user
 
@@ -77,13 +88,13 @@ If a referenced ID does not exist, say so in one line and ask what they meant. A
 Moved the parser into `lib/parse.ts`; tests pass.
 
 Actions
-- A1 Run `npm run lint` before committing.
+- 🔵 A1 Run `npm run lint` before committing.
 Suggestions
-- S1 Cache the AST between runs.
+- 🔵 S1 Cache the AST between runs.
 Questions
-- Q1 Keep the old `--legacy` flag? (yes/no)
+- 🔵 Q1 Keep the old `--legacy` flag? (yes/no)
 Decisions
-- D1 Error format: (a) JSON (b) plain text
+- 🔵 D1 Error format: (a) JSON (b) plain text
 ```
 
-Reply: `Q1: yes, D1: a, skip S1`
+Reply: `Q1: yes, D1: a, skip S1`. The next reply ends with `Resolved: 💬 Q1, 💬 D1, ⏭️ S1`.

@@ -27,7 +27,8 @@
           "items": { "enum": ["actions", "suggestions", "questions", "decisions"] }
         },
         "showEmptySections": { "type": "boolean" },
-        "replyHint": { "type": "boolean" }
+        "replyHint": { "type": "boolean" },
+        "statusEmoji": { "type": "boolean" }
       }
     },
     "language": {

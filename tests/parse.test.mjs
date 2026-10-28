@@ -149,3 +149,27 @@ test('parseTags leaves text untouched, indentation included (review M3)', () => 
   assert.equal(parseTags(code).text, code);
   assert.equal(parseTags(`${code}\n!verbose`).text, `${code}\n`);
 });
+
+test('status emojis before or after the ID set the status (notes A2)', () => {
+  const text = [
+    'Actions', '- 🔵 A3 Run lint', '- ⏳ A4 Write docs', '- A5 🔵 Tag it', '- ✅ A1 Install eslint',
+    'Questions', '- 🔵 Q2 Keep it? (yes/no)', '', 'Resolved: ✅ A2, 💬 Q1, ⏭️ S1, ⏭ S2, D1 (skipped)',
+  ].join('\n');
+  const items = parseAssistantItems(text);
+  assert.deepEqual(ids(items), ['A3', 'A4', 'A5', 'A1:done', 'Q2', 'A2:done', 'Q1:answered', 'S1:skipped', 'S2:skipped', 'D1:skipped']);
+  assert.equal(items[0].text, 'Run lint');
+  assert.equal(items[2].text, 'Tag it');
+  assert.equal(items[1].progress, true);
+  // An emoji marks the line as an item even outside a section.
+  assert.deepEqual(ids(parseAssistantItems('Notes\n- 🔵 S7 Cache it')), ['S7']);
+});
+
+test('⏳ marks a new or open item in progress; a later 🔵 recap keeps it so', () => {
+  const l = emptyLedger('claude', 's');
+  registerItems(l, parseAssistantItems('Actions\n- 🔵 A1 Run lint\n- ⏳ A2 Write docs'));
+  assert.deepEqual(l.items.map((i) => i.status), ['open', 'in-progress']);
+  registerItems(l, parseAssistantItems('Actions\n- ⏳ A1 Run lint\n- 🔵 A2 Write docs'));
+  assert.deepEqual(l.items.map((i) => i.status), ['in-progress', 'in-progress']);
+  registerItems(l, parseAssistantItems('Resolved: ✅ A1, ⏭️ A2'));
+  assert.deepEqual(l.items.map((i) => i.status), ['done', 'skipped']);
+});

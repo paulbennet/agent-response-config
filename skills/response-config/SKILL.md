@@ -43,13 +43,15 @@ Always full length, whatever the settings: error messages, failing test output, 
 <minimal summary of what happened>
 
 Actions
-- A1 <something to do next>
+- 🔵 A1 <something to do next>
 Suggestions
-- S1 <optional improvement>
+- 🔵 S1 <optional improvement>
 Questions
-- Q1 <needs an answer> (yes/no)
+- 🔵 Q1 <needs an answer> (yes/no)
 Decisions
-- D1 <choice> (a) option (b) option
+- 🔵 D1 <choice> (a) option (b) option
+
+Resolved: ✅ <done IDs>, 💬 <answered>, ⏭️ <skipped>
 ```
 
 - Each type has its own counter that never resets and never repeats in the session. Continue from the highest ID used so far, including IDs from earlier turns and, if present, the "Next IDs" line from the hook.
@@ -57,7 +59,8 @@ Decisions
 - Put anything the user must notice (risk, caveat, blocked step, follow-up) in an item, not in the summary.
 - Questions state the expected answer form. Decisions list lettered options.
 - Always write items as list lines (`- A1 ...`) under their section heading (Actions, Suggestions, Questions, Decisions). Outside a heading only a marked ID (`- A1: ...`) counts.
-- When you finish or settle an item, close it: `- A2 done` (or `answered`, `skipped`), `- A2 <text> (done)` in a recap, or one line `Resolved: A2, Q1`.
+- Start each item with its status emoji: 🔵 open, ⏳ in progress. With `structured.statusEmoji` false, write items without emojis.
+- Never list a finished or settled item under its section again, not even as a recap. Close it in one line after the sections: `Resolved: ✅ A2, 💬 Q1, ⏭️ S1` (✅ done, 💬 answered, ⏭️ skipped), or without emojis `Resolved: A2, Q1 (answered), S1 (skipped)`.
 - The user may reply by ID: `A2` or `do A2`, `done A1` or `A1 done`, `skip S1`, `Q1: yes`, `D3: b`. Treat each as an instruction or answer about that item. `Q1: why?` is a question about Q1, and a bare `Q1` points at it; neither is an answer. If an ID is unknown, ask which item they mean.
 - If the hook says you reused an ID, the new item now owns it and the old one is dropped. Take new IDs from "Next IDs" from then on.
 - Details and edge cases: [references/format.md](references/format.md).

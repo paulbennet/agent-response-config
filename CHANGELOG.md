@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Finished or settled items are no longer listed under their sections, not even as a recap. The rules ask for one line after the sections: `Resolved: ✅ A2, 💬 Q1, ⏭️ S1`.
+- Status emojis: items start with 🔵 open or ⏳ in progress; the Resolved line marks ✅ done, 💬 answered, ⏭️ skipped. New option `structured.statusEmoji` (default true). The hooks read an emoji before or after the ID with the option on or off; `- ⏳ A1 text` marks A1 in progress.
+- Mod: the items pane shows each item's status emoji before its ID, the band counts in-progress items (⏳), and the config pane has a Status emojis switch.
+
 ## 0.1.1
 
 - setup.mjs and the README drop the "unverified" notes for the Codex and VS Code hooks, which were checked live; the VS Code note names the `chat.useHooks` and `chat.hookFilesLocations` settings.

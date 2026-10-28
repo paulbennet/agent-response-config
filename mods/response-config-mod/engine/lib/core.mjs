@@ -11,6 +11,9 @@ export function deepMerge(base, over) {
 
 export const TYPES = ['A', 'S', 'Q', 'D'];
 
+// The emoji for each item status, in replies (structured.statusEmoji) and in the mod's pane.
+export const STATUS_EMOJI = { open: '🔵', 'in-progress': '⏳', done: '✅', answered: '💬', skipped: '⏭️' };
+
 export function emptyLedger(agent, sessionId) {
   return {
     agent,
@@ -58,6 +61,7 @@ export function sameItem(a, b) {
 //   `superseded` under `A1~1` (out of ID lookup) and queued in `reused` for the next hint.
 // - Entries with `close` mark an existing item done/answered/skipped.
 // - Entries with `reopen` ("A1 still open: ...") set an existing item back to open.
+// - `progress` entries ("- ⏳ A1 text") mark a new or open item in progress.
 // - `loose` entries (an unmarked "- A1 text" outside a section) count only as the next unused
 //   ID of their type, or as a recap of an existing item; anything else is taken for prose.
 export function registerItems(ledger, parsed) {
@@ -74,13 +78,17 @@ export function registerItems(ledger, parsed) {
       }
       continue;
     }
+    const status = p.progress ? 'in-progress' : 'open';
     if (p.reopen && existing) {
-      existing.status = 'open';
+      existing.status = status;
       continue;
     }
     if (p.loose && (existing ? !sameItem(existing.text, p.text) : p.n !== ledger.counters[p.type] + 1)) continue;
     if (existing && sameItem(existing.text, p.text)) {
-      if (isOpen(existing)) existing.text = p.text;
+      if (isOpen(existing)) {
+        existing.text = p.text;
+        if (p.progress) existing.status = status;
+      }
       continue;
     }
     if (existing) {
@@ -89,7 +97,7 @@ export function registerItems(ledger, parsed) {
       existing.status = 'superseded';
       ledger.reused.push({ id, text: existing.text });
     }
-    ledger.items.push({ id, type: p.type, n: p.n, text: p.text, status: 'open', turn: ledger.turn });
+    ledger.items.push({ id, type: p.type, n: p.n, text: p.text, status, turn: ledger.turn });
     ledger.counters[p.type] = Math.max(ledger.counters[p.type], p.n);
     added.push(id);
   }

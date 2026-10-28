@@ -4,7 +4,7 @@ import { expect, test } from 'claude-code/testing'
 const CONFIG = {
   enabled: true,
   minimal: { on: true, level: 'high', maxWords: 80, preserve: ['code', 'commands', 'tables', 'errors', 'paths', 'diffs'] },
-  structured: { on: true, sections: ['actions', 'suggestions', 'questions', 'decisions'], showEmptySections: false, replyHint: true },
+  structured: { on: true, sections: ['actions', 'suggestions', 'questions', 'decisions'], showEmptySections: false, replyHint: true, statusEmoji: true },
   language: { on: false, cefr: 'B2', readability: null, vocabulary: null, plainLanguage: false },
   hooks: { sessionStart: true, eachPrompt: true, ledger: true },
   overrides: { inlineTags: true },

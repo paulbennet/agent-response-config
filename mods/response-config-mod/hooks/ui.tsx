@@ -14,7 +14,7 @@ import type { Dollar } from './engine'
 // @ts-ignore bundled plain-JS modules without declarations
 import { effectiveConfig, modeSummary, wordBudget } from '../engine/lib/hint.mjs'
 // @ts-ignore
-import { openItems } from '../engine/lib/core.mjs'
+import { STATUS_EMOJI, openItems } from '../engine/lib/core.mjs'
 
 // The engine reads state statically: each file that reads or writes an atom declares it itself.
 const configAtom = atom({ plugin: 'response-config-mod', key: 'config' } as const, null, { shape: 'config-1' })
@@ -66,7 +66,7 @@ type Action = { key: string; label: string; hotkey?: string; primary?: boolean; 
 
 // Panes open as tall as their content, so an inline pane is not cut to a third of the screen:
 // the config pane's rows, and per item type a heading, its rows and a gap, plus the hint line.
-const CONFIG_ROWS = 24
+const CONFIG_ROWS = 25
 export async function openItemsPane($: Dollar) {
   const ledger = await read($, ledgerAtom)
   const open: Item[] = ledger ? openItems(ledger) : []
@@ -96,6 +96,9 @@ export function installUi(on: On) {
           <Box flexDirection="row" columnGap={1}>
             <Text dimColor>· open</Text>
             {SECTIONS.map(([t]) => <Text key={`band-${t}`} color={typeColor(t, e.surface)}>{t}{count(t)}</Text>)}
+            {cfg.structured.statusEmoji && open.some(i => i.status === 'in-progress') && (
+              <Text>{STATUS_EMOJI['in-progress']}{open.filter(i => i.status === 'in-progress').length}</Text>
+            )}
           </Box>
         )}
         {style === 'drifted' && <Text color="warning">· style edited by hand</Text>}
@@ -164,6 +167,8 @@ export function installUi(on: On) {
             }} />)}
           {field('structured', 'Structured A/S/Q/D', <Select key="structured" value={flag(cfg.structured.on)} options={onOff}
             onSelect={v => { void save($, [`structured.on=${v === 'on'}`]) }} />)}
+          {field('emoji', 'Status emojis', <Select key="emoji" value={flag(cfg.structured.statusEmoji)} options={onOff}
+            onSelect={v => { void save($, [`structured.statusEmoji=${v === 'on'}`]) }} />)}
         </Box>
         <Box flexDirection="column">
           {heading('LANGUAGE')}
@@ -221,6 +226,7 @@ export function installUi(on: On) {
   on('ui.render', { component: 'Pane', requestId: ITEMS_PANE }, async ($, e) => {
     const { Box, Button, Text } = $.ui.resolve(e)
     const led = await read($, ledgerAtom)
+    const emoji = Boolean((await read($, configAtom))?.structured.statusEmoji)
     const open: Item[] = led ? openItems(led) : []
     const send = (text: string) => { void $.prompt.submit({ text, asUser: true }) }
     if (open.length === 0) return <Text dimColor>No open items. They appear after the agent lists A/S/Q/D items.</Text>
@@ -263,10 +269,15 @@ export function installUi(on: On) {
       <Button key={`${item.id}-${a.key}`} label={a.label} onPress={a.run} {...look(a)}
         {...(terminal && withHotkey && a.hotkey ? { hotkey: a.hotkey } : {})} />
     )
+    // With status emojis on, the emoji leads the ID; otherwise an in-progress item says so after its text.
     const idCell = (item: Item) => (
-      <Box flexShrink={0}><Text bold color={typeColor(item.type, e.surface)}>{item.id}</Text></Box>
+      <Box flexShrink={0}>
+        <Text bold color={typeColor(item.type, e.surface)}>
+          {emoji ? `${STATUS_EMOJI[item.status as keyof typeof STATUS_EMOJI] ?? ''} ` : ''}{item.id}
+        </Text>
+      </Box>
     )
-    const status = (item: Item) => (item.status === 'in-progress' ? ' (in progress)' : '')
+    const status = (item: Item) => (!emoji && item.status === 'in-progress' ? ' (in progress)' : '')
 
     const terminalRow = (item: Item) => {
       const isFocused = item.id === focused

@@ -5,18 +5,29 @@ export function stripFences(text) {
   return String(text ?? '').replace(/^[ \t]*(```|~~~)[^\n]*\n[\s\S]*?^[ \t]*\1[ \t]*$/gm, '');
 }
 
-// A list line that starts with an ID: "- A1 text", "* **Q2:** text", "3. D1 - text".
-// Groups: 1 bold before the ID, 2 type, 3 number, 4 separator, 5 text.
-const LISTED_RE = /^\s*(?:[-*+]|\d+[.)])\s+(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
+// Status emojis an item may carry before or after its ID (STATUS_EMOJI in core.mjs):
+// "- 🔵 A1 text", "Resolved: ✅ A2".
+const EMOJI_STATUS = { '🔵': 'open', '⏳': 'in-progress', '✅': 'done', '💬': 'answered', '⏭': 'skipped' };
+const EMOJI = '(?:🔵|⏳|✅|💬|⏭)\\uFE0F?';
+const emojiStatus = (e) => (e ? EMOJI_STATUS[e.replace(/️/g, '')] : undefined);
+const isClosing = (s) => s === 'done' || s === 'answered' || s === 'skipped';
+const LEAD_EMOJI_RE = new RegExp(`^(${EMOJI})\\s*`);
+// A list line that starts with an ID: "- A1 text", "* **Q2:** text", "3. D1 - text", "- 🔵 A1 text".
+// Groups: 1 status emoji, 2 bold before the ID, 3 type, 4 number, 5 separator, 6 text.
+const ITEM = `(?:(${EMOJI})\\s*)?(\\**)([ASQD])(\\d+)\\**\\s*([:.)–—-]?)\\**\\s+(\\S.*)$`;
+const LISTED_RE = new RegExp(`^\\s*(?:[-*+]|\\d+[.)])\\s+${ITEM}`);
 // The same without a list marker; accepted only inside a section.
-const BARE_RE = /^\s*(\**)([ASQD])(\d+)\**\s*([:.)–—-]?)\**\s+(\S.*)$/;
+const BARE_RE = new RegExp(`^\\s*${ITEM}`);
 const LIST_LINE_RE = /^\s*(?:[-*+]|\d+[.)])\s/;
 // "Actions", "## Questions (Q)", "**Decisions (D):**"; the rules name the headings with their letter.
 const HEADING_RE = /^\s*(?:#{1,6}\s*)?\**(actions?|suggestions?|questions?|decisions?)(?:\s*\([ASQD]\))?\**\s*:?\s*\**\s*$/i;
 // "Resolved: A2, Q1" / "Done: A1" / "Closed: S3" / "Resolved: A4 (replaced by A6)" /
-// "Resolved: A2 (skipped), Q2 (answered), D1": each entry may carry its own status.
-const RESOLVED_RE = /^\s*(?:[-*+]\s+)?\**(resolved|done|closed|answered|skipped)\**\s*:\s*([ASQD]\d+\b.*)$/i;
-const RESOLVED_ENTRY_RE = /^\s*(?:and\s+)?([ASQD]\d+)\b\s*(?:\((\w+)[^)]*\))?/i;
+// "Resolved: A2 (skipped), Q2 (answered), D1": each entry may carry its own status, also as an
+// emoji: "Resolved: ✅ A2, ⏭️ S1".
+const RESOLVED_RE = new RegExp(
+  `^\\s*(?:[-*+]\\s+)?(?:${EMOJI}\\s*)?\\**(resolved|done|closed|answered|skipped)\\**\\s*:\\s*((?:${EMOJI}\\s*)?[ASQD]\\d+\\b.*)$`, 'i',
+);
+const RESOLVED_ENTRY_RE = new RegExp(`^\\s*(?:and\\s+)?(?:(${EMOJI})\\s*)?([ASQD]\\d+)\\b\\s*(?:\\((\\w+)[^)]*\\))?`, 'i');
 // An option on its own line under a decision or question: "  - (a) The minimal list"
 const OPTION_LINE_RE = /^\s+(?:[-*+]\s+)?(\([a-h]\)\s*\S.*)$/;
 const STATUS_WORD = 'done|completed|complete|finished|fixed|resolved|answered|skipped|closed';
@@ -55,8 +66,9 @@ export function parseAssistantItems(text) {
       for (const entry of resolved[2].split(/[,;]/)) {
         const e = RESOLVED_ENTRY_RE.exec(entry);
         if (!e) continue;
-        const own = e[2] && CLOSE_STATUS[e[2].toLowerCase()];
-        items.push({ type: e[1][0].toUpperCase(), n: Number(e[1].slice(1)), text: '', close: own ?? CLOSE_STATUS[resolved[1].toLowerCase()] });
+        const mark = emojiStatus(e[1]);
+        const own = (e[3] && CLOSE_STATUS[e[3].toLowerCase()]) ?? (isClosing(mark) ? mark : undefined);
+        items.push({ type: e[2][0].toUpperCase(), n: Number(e[2].slice(1)), text: '', close: own ?? CLOSE_STATUS[resolved[1].toLowerCase()] });
       }
       continue;
     }
@@ -71,14 +83,23 @@ export function parseAssistantItems(text) {
       if (line.trim() && !LIST_LINE_RE.test(line)) inSection = false;
       continue;
     }
-    const [, bold, type, num, sep, rest] = m;
+    const [, before, bold, type, num, sep, rest] = m;
     const n = Number(num);
-    const body = rest.trim().replace(/\*+$/, '').trim();
+    let body = rest.trim().replace(/\*+$/, '').trim();
     const whole = CLOSING_TEXT_RE.exec(body);
     if (whole) {
       items.push({ type, n, text: '', close: closeStatus(whole[1]) });
       continue;
     }
+    // "- 🔵 A1 text" or "- A1 🔵 text": ✅ 💬 ⏭️ close the item, ⏳ marks it in progress.
+    const after = LEAD_EMOJI_RE.exec(body);
+    if (after) body = body.slice(after[0].length);
+    const mark = emojiStatus(before ?? after?.[1]);
+    if (isClosing(mark)) {
+      items.push({ type, n, text: '', close: mark });
+      continue;
+    }
+    const progress = mark === 'in-progress' ? { progress: true } : {};
     const leading = LEADING_CLOSE_RE.exec(body);
     if (leading) {
       items.push({ type, n, text: '', close: closeStatus(leading[1]) });
@@ -89,10 +110,10 @@ export function parseAssistantItems(text) {
       items.push({ type, n, text: '', close: 'answered', answer: settled[1].trim() });
       continue;
     }
-    const loose = !inSection && !bold && !sep;
+    const loose = !inSection && !bold && !sep && !mark;
     const still = STILL_OPEN_RE.exec(body);
     if (still) {
-      items.push({ type, n, text: still[1].trim(), reopen: true });
+      items.push({ type, n, text: still[1].trim(), reopen: true, ...progress });
       continue;
     }
     if (loose) {
@@ -105,7 +126,7 @@ export function parseAssistantItems(text) {
       items.push({ type, n, text: itemText, close: closeStatus(tail[1] ?? tail[2] ?? tail[3]) });
       continue;
     }
-    items.push({ type, n, text: body });
+    items.push({ type, n, text: body, ...progress });
   }
   return items;
 }
