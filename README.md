@@ -119,7 +119,7 @@ With `manage` on, `response-config-managed.md` is created in `~/.claude/output-s
 
 The `response-config-mod` plugin adds, inside Claude Code:
 
-- `/response-config` with a first-run wizard, a config pane, an open-items pane with one-click replies, and a status band showing the mode and open item counts;
+- `/response-config` with a first-run wizard, a config pane, an open-items pane with one-click replies and bulk select, and a status band showing the mode and open item counts;
 - rules injected into the system prompt and reloaded when a config file changes, tags and quick replies handled when you send;
 - classic hooks stand down automatically while the mod runs.
 

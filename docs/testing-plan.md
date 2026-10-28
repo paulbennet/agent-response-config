@@ -64,6 +64,7 @@ All 70 auto cases pass except one known issue, listed below. Everything that tou
 | EVAL-4 | M3, M4, Codex and Copilot evals | Asked "Redis or Postgres?", Copilot (twice) and Codex (once) chose in the summary and listed the options as suggestions, so there was no D item to answer. The rules described how decisions look, not when a choice is one. Fixed: a choice that is the user's to make goes under Decisions with the pick marked "(recommended)", not settled in the summary. M3 and M4 pass on both. |
 | EVAL-5 | M7, Codex eval | Codex ran the delete without asking first; `codex exec`'s sandbox blocked it. The rules keep confirmations full length but do not ask for one. Won't fix: asking first is agent behaviour, not reply style. |
 | EVAL-6 | M21, Claude eval | With only Actions and Questions configured, the hint still offered `Next IDs: A1 S1 Q1 D1`, and the model wrote S1 and D1 under Actions. Fixed: Next IDs lists only the configured types. M21 passes. |
+| MOD-3 | H21, mod test | A reply sent by an items pane button skipped the mod's own prompt.submit hook (the engine leaves out the calling plugin), so the ledger kept the item open until the model closed it. Fixed: the pane applies the reply to the ledger before it submits. |
 
 ## How to run the auto cases
 
@@ -258,6 +259,8 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H18 | A session left open over an hour keeps the hooks stood down | Manual | Pass (prompt at +67 min: marker refreshed, both classic hook copies silent) |
 | H19 | The same in the Claude desktop app | Manual | Pass (band, items pane and buttons work) |
 | H20 | The same in the VS Code extension | Manual | Pass (band, items pane and buttons work) |
+| H21 | Bulk select: x or the box picks items; the bar's Done, Skip and Do send one reply for all of them, the picked items leave the pane, and the pick clears | Auto, mod test | Pass after the MOD-3 fix |
+| H22 | The same live in the terminal, desktop and VS Code | Manual | |
 
 **H16 steps.** Install both plugins and start with `--debug`. Pass when the classic hooks print nothing for this session. The mod's rules are in the system prompt instead.
 

@@ -175,3 +175,32 @@ test('/response-config taken by the plugin skill: the mod serves /response-confi
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   expect(String(seen.submitted.context?.[0])).toMatch(/\[response-config\]/)
 })
+
+test('bulk select: picked items share one reply, and d/s/o act on the pick (notes A3)', async ($, on) => {
+  const seen: { submitted?: any } = {}
+  engine(on, seen)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: false })
+  await $.turn.complete(turn('Actions\n- A1 Run tests\n- A2 Lint\nSuggestions\n- S1 Cache it\nQuestions\n- Q1 Ship it? (yes/no)'))
+  const term = await $.ui.mount({ ...ITEMS, surface: 'terminal' })
+  expect((await term.find({ key: 'A1-sel' }))?.props.hotkey).toBe('x')
+  expect(await term.find({ key: 'bulk-done' })).toBeUndefined()
+  await term.press({ plugin: 'response-config-mod', key: 'A1-sel' })
+  await term.press({ plugin: 'response-config-mod', key: 'Q1-sel' })
+  expect((await term.find({ key: 'bulk-done' }))?.props.hotkey).toBe('d')
+  expect((await term.find({ key: 'bulk-do' }))?.props.label).toBe('do 1')
+  expect((await term.find({ key: 'A1-done' }))?.props.hotkey).toBeUndefined() // d belongs to the bar
+  expect((await term.find({ key: 'A1-sel' }))?.props.label).toBe('unselect')
+  await term.press({ plugin: 'response-config-mod', key: 'bulk-skip' })
+  expect(seen.submitted.text).toBe('skip A1, Q1')
+  expect(await term.find({ key: 'A1-done' })).toBeUndefined() // skipped items leave the pane
+  expect(await term.find({ key: 'bulk-done' })).toBeUndefined() // the pick is cleared
+  await term.unmount()
+  const desk = await $.ui.mount({ ...ITEMS, surface: 'desktop' })
+  expect((await desk.find({ key: 'A2-sel' }))?.props.label).toBe('☐')
+  await desk.press({ plugin: 'response-config-mod', key: 'A2-sel' })
+  expect((await desk.find({ key: 'A2-sel' }))?.props.label).toBe('☑')
+  await desk.press({ plugin: 'response-config-mod', key: 'bulk-all' })
+  await desk.press({ plugin: 'response-config-mod', key: 'bulk-done' })
+  expect(seen.submitted.text).toBe('done A2, S1')
+  await desk.unmount()
+})

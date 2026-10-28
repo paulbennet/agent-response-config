@@ -8,13 +8,15 @@ import type { On, RenderChildren } from 'claude-code'
 
 import { runWizard } from './wizard'
 import {
-  cli, commandName, refresh, save,
+  cli, commandName, mutateLedger, refresh, save,
 } from './engine'
 import type { Dollar } from './engine'
 // @ts-ignore bundled plain-JS modules without declarations
 import { effectiveConfig, modeSummary, wordBudget } from '../engine/lib/hint.mjs'
 // @ts-ignore
-import { STATUS_EMOJI, openItems } from '../engine/lib/core.mjs'
+import { STATUS_EMOJI, applyReplies, openItems } from '../engine/lib/core.mjs'
+// @ts-ignore
+import { parseUserReplies } from '../engine/lib/parse.mjs'
 
 // The engine reads state statically: each file that reads or writes an atom declares it itself.
 const configAtom = atom({ plugin: 'response-config-mod', key: 'config' } as const, null, { shape: 'config-1' })
@@ -22,6 +24,7 @@ const ledgerAtom = atom({ plugin: 'response-config-mod', key: 'ledger' } as cons
 const styleAtom = atom({ plugin: 'response-config-mod', key: 'style' } as const, 'off')
 const targetAtom = atom({ plugin: 'response-config-mod', key: 'target' } as const, 'user')
 const focusAtom = atom({ plugin: 'response-config-mod', key: 'focus' } as const, '')
+const selectedAtom = atom({ plugin: 'response-config-mod', key: 'selected' } as const, [] as string[])
 
 export const CONFIG_PANE = 'rc-config'
 export const ITEMS_PANE = 'rc-items'
@@ -65,13 +68,14 @@ export function splitItem(text: string) {
 type Action = { key: string; label: string; hotkey?: string; primary?: boolean; quick?: boolean; run: () => void }
 
 // Panes open as tall as their content, so an inline pane is not cut to a third of the screen:
-// the config pane's rows, and per item type a heading, its rows and a gap, plus the hint line.
+// the config pane's rows, and per item type a heading, its rows and a gap, plus the hint line
+// and room for the bulk bar.
 const CONFIG_ROWS = 25
 export async function openItemsPane($: Dollar) {
   const ledger = await read($, ledgerAtom)
   const open: Item[] = ledger ? openItems(ledger) : []
   const types = new Set(open.map(i => i.type)).size
-  await $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true, rows: Math.max(4, open.length + types * 2 + 1) })
+  await $.ui.open({ id: ITEMS_PANE, title: 'Open items', focus: true, rows: Math.max(4, open.length + types * 2 + 3) })
 }
 export async function openConfigPane($: Dollar) {
   await $.ui.open({ id: CONFIG_PANE, title: 'Response config', focus: true, rows: CONFIG_ROWS })
@@ -228,11 +232,30 @@ export function installUi(on: On) {
     const led = await read($, ledgerAtom)
     const emoji = Boolean((await read($, configAtom))?.structured.statusEmoji)
     const open: Item[] = led ? openItems(led) : []
-    const send = (text: string) => { void $.prompt.submit({ text, asUser: true }) }
+    // A prompt the mod submits skips its own prompt.submit hook, so the reply is applied to the
+    // ledger here, and the pane drops a closed item at once.
+    const send = (text: string) => {
+      void (async () => {
+        await mutateLedger($, l => { applyReplies(l, parseUserReplies(text)) })
+        await $.prompt.submit({ text, asUser: true })
+      })()
+    }
     if (open.length === 0) return <Text dimColor>No open items. They appear after the agent lists A/S/Q/D items.</Text>
     const terminal = e.surface === 'terminal'
     const stored = await read($, focusAtom)
     const focused = open.some(i => i.id === stored) ? stored : (open[0]?.id ?? '')
+    // Bulk select: picked items share one reply ("done A1, A2"). While any are picked, the
+    // d/s/o keys act on them, not on the focused item.
+    const picked = (await read($, selectedAtom)).filter(id => open.some(i => i.id === id))
+    const bulk = picked.length > 0
+    const isPicked = (item: Item) => picked.includes(item.id)
+    const toggle = (item: Item) => {
+      void update($, selectedAtom, s => (s.includes(item.id) ? s.filter(x => x !== item.id) : [...s, item.id]))
+    }
+    const sendAll = (verb: string, ids: string[]) => {
+      send(`${verb} ${ids.join(', ')}`)
+      void update($, selectedAtom, () => [])
+    }
 
     // Done is the one main action of an action or suggestion. On the terminal every answer button
     // is drawn in the accent color, as the design's colored labels; elsewhere answers are plain
@@ -257,6 +280,11 @@ export function installUi(on: On) {
       out.push({ ...answer, label: terminal ? answer.label.toLowerCase() : answer.label })
       return out
     }
+    // The terminal toggles a pick with x; a pointer surface has the box before the ID.
+    const withPick = (item: Item): Action[] => (terminal
+      ? [...actions(item), { key: 'sel', label: isPicked(item) ? 'unselect' : 'select', hotkey: 'x', run: () => toggle(item) }]
+      : actions(item))
+    const BULK_KEYS = new Set(['d', 's', 'o'])
 
     const look = (a: Action) => {
       if (a.primary) return { variant: 'primary' as const }
@@ -264,11 +292,37 @@ export function installUi(on: On) {
         ? { plain: true as const }
         : { variant: 'secondary' as const }
     }
-    // Hotkeys only where keys drive the pane: the terminal's focused item.
+    // Hotkeys only where keys drive the pane: the terminal's focused item, less the bulk bar's.
     const button = (item: Item, a: Action, withHotkey: boolean) => (
       <Button key={`${item.id}-${a.key}`} label={a.label} onPress={a.run} {...look(a)}
-        {...(terminal && withHotkey && a.hotkey ? { hotkey: a.hotkey } : {})} />
+        {...(terminal && withHotkey && a.hotkey && !(bulk && BULK_KEYS.has(a.hotkey)) ? { hotkey: a.hotkey } : {})} />
     )
+    const pickBox = (item: Item) => (terminal
+      ? <Box flexShrink={0} width={1}><Text color="claude">{isPicked(item) ? '☑' : ' '}</Text></Box>
+      : <Button key={`${item.id}-sel`} label={isPicked(item) ? '☑' : '☐'} plain dimColor={!isPicked(item)} onPress={() => toggle(item)} />)
+
+    const bulkBar = () => {
+      if (!bulk) return null
+      const doable = picked.filter(id => id[0] === 'A' || id[0] === 'S')
+      const keys = (k: string) => (terminal ? { hotkey: k } : {})
+      const label = (t: string, n?: number) => `${terminal ? t.toLowerCase() : t}${n == null ? '' : ` ${n}`}`
+      return (
+        <Box key="bulk" flexDirection="row" columnGap={1} flexWrap="wrap" alignItems="center">
+          <Text bold>{picked.length} selected</Text>
+          <Button key="bulk-done" label={label('Done', picked.length)} variant="primary" {...keys('d')} onPress={() => sendAll('done', picked)} />
+          <Button key="bulk-skip" label={label('Skip', picked.length)} variant="secondary" {...keys('s')} onPress={() => sendAll('skip', picked)} />
+          {doable.length > 0 && (
+            <Button key="bulk-do" label={label('Do', doable.length)} variant="secondary" {...keys('o')} onPress={() => sendAll('do', doable)} />
+          )}
+          {picked.length < open.length && (
+            <Button key="bulk-all" label={label('All')} variant="secondary" {...keys('l')}
+              onPress={() => { void update($, selectedAtom, () => open.map(i => i.id)) }} />
+          )}
+          <Button key="bulk-clear" label={label('Clear')} variant="secondary" {...keys('u')}
+            onPress={() => { void update($, selectedAtom, () => []) }} />
+        </Box>
+      )
+    }
     // With status emojis on, the emoji leads the ID; otherwise an in-progress item says so after its text.
     const idCell = (item: Item) => (
       <Box flexShrink={0}>
@@ -284,12 +338,13 @@ export function installUi(on: On) {
       return (
         <Box key={item.id} flexDirection="row" columnGap={1}>
           <Box flexShrink={0}><Text color="claude">{isFocused ? '▸' : ' '}</Text></Box>
+          {pickBox(item)}
           {idCell(item)}
           <Box flexGrow={1} flexShrink={1} minWidth={0}>
             <Text wrap="truncate-end">{splitItem(item.text).head}{status(item)}</Text>
           </Box>
           <Box flexDirection="row" columnGap={1} flexShrink={0}>
-            {actions(item).map(a => button(item, a, isFocused))}
+            {withPick(item).map(a => button(item, a, isFocused))}
           </Box>
         </Box>
       )
@@ -306,6 +361,7 @@ export function installUi(on: On) {
       return (
         <Box key={item.id} flexDirection="column" gap="xs">
           <Box flexDirection="row" columnGap="sm" alignItems="center">
+            {pickBox(item)}
             {idCell(item)}
             <Box flexGrow={1} flexShrink={1} minWidth={0}>
               <Text wrap={expanded ? 'wrap' : 'truncate-end'}>{splitItem(item.text).head}{status(item)}</Text>
@@ -326,6 +382,7 @@ export function installUi(on: On) {
 
     return (
       <Box flexDirection="column" gap={1}>
+        {bulkBar()}
         {SECTIONS.map(([type, label]) => {
           const items = open.filter(i => i.type === type)
           if (items.length === 0) return null
@@ -338,9 +395,11 @@ export function installUi(on: On) {
         })}
         {terminal && (
           <Text dimColor>
-            {e.props.isFocused
-              ? 'tab/↑↓ move · enter press · d done · s skip · o do · y/n · a-h option · r answer'
-              : `no keys here: open it with /${commandName()} items to use the keyboard`}
+            {!e.props.isFocused
+              ? `no keys here: open it with /${commandName()} items to use the keyboard`
+              : bulk
+                ? `d/s/o act on the ${picked.length} selected · x select · l all · u clear · y/n · a-h option · r answer`
+                : 'tab/↑↓ move · enter press · d done · s skip · o do · x select · y/n · a-h option · r answer'}
           </Text>
         )}
       </Box>

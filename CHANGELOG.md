@@ -5,6 +5,8 @@
 - Finished or settled items are no longer listed under their sections, not even as a recap. The rules ask for one line after the sections: `Resolved: ✅ A2, 💬 Q1, ⏭️ S1`.
 - Status emojis: items start with 🔵 open or ⏳ in progress; the Resolved line marks ✅ done, 💬 answered, ⏭️ skipped. New option `structured.statusEmoji` (default true). The hooks read an emoji before or after the ID with the option on or off; `- ⏳ A1 text` marks A1 in progress.
 - Mod: the items pane shows each item's status emoji before its ID, the band counts in-progress items (⏳), and the config pane has a Status emojis switch.
+- Mod: bulk select in the items pane. Pick items with the box before the ID, or `x` on the terminal; a bar then sends one reply for all of them (`done A1, A2`, `skip ...`, `do ...`), with All and Clear. On the terminal `d`, `s` and `o` act on the pick while one is made.
+- Mod: a reply sent from an items pane button now updates the ledger at once. The engine leaves the mod's own prompt.submit hook out of a prompt the mod submits, so the item stayed open until the model closed it (MOD-3).
 
 ## 0.1.1
 

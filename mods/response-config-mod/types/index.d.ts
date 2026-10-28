@@ -31,6 +31,8 @@ declare module 'claude-code' {
       target: 'user' | 'project'
       // The open item whose button holds the items pane's focus ring ('' when none).
       focus: string
+      // Open item IDs picked in the items pane for one bulk reply.
+      selected: string[]
     }
   }
 }
