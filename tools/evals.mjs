@@ -40,7 +40,9 @@ const words = (t) => t.match(/[A-Za-z0-9][A-Za-z0-9'’-]*/g) ?? [];
 export function sentences(text) {
   return prose(text)
     .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim())
+    .map((s) => s.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, ''))
+    // An item's status emoji and ID are format, not words of the sentence.
+    .map((s) => s.replace(/^(?:\p{Extended_Pictographic}️?\s*)?\**[ASQD]\d+\**:?\s+/u, '').trim())
     .filter((s) => words(s).length > 0);
 }
 const syllables = (w) => {
@@ -53,6 +55,9 @@ export function measure(text) {
   const lens = ss.map((s) => words(s).length);
   const syl = ws.reduce((n, w) => n + syllables(w), 0);
   const fk = ws.length && ss.length ? 0.39 * (ws.length / ss.length) + 11.8 * (syl / ws.length) - 15.59 : 0;
+  const fre = ws.length && ss.length ? 206.835 - 1.015 * (ws.length / ss.length) - 84.6 * (syl / ws.length) : 0;
+  const complex = ws.filter((w) => syllables(w) >= 3).length;
+  const fog = ws.length && ss.length ? 0.4 * (ws.length / ss.length + 100 * (complex / ws.length)) : 0;
   const head = (name) => new RegExp(`^\\s*(?:#{1,6}\\s*)?\\**${name}s?(?:\\s*\\([A-Z]\\))?\\**\\s*:?\\**\\s*$`, 'im').test(text);
   return {
     proseWords: ws.length,
@@ -60,6 +65,8 @@ export function measure(text) {
     maxSentence: lens.length ? Math.max(...lens) : 0,
     avgSentence: lens.length ? +(lens.reduce((a, b) => a + b, 0) / lens.length).toFixed(1) : 0,
     fkGrade: +fk.toFixed(1),
+    readingEase: +fre.toFixed(1),
+    fog: +fog.toFixed(1),
     headings: ['action', 'suggestion', 'question', 'decision'].filter(head),
     items: parseAssistantItems(text).filter((i) => !i.close && !i.loose).map((i) => `${i.type}${i.n}`),
     you: /\byou(?:r|rs|rself)?\b/i.test(prose(text)),
@@ -174,31 +181,31 @@ const CASES = [
     },
   },
   {
-    id: 'M13', title: 'CEFR A1: sentences of 8 words or fewer', config: { language: { on: true, cefr: 'A1' } }, turns: [EXPLAIN],
+    id: 'M13', agents: 'all', title: 'CEFR A1: sentences of 8 words or fewer', config: { language: { on: true, cefr: 'A1' } }, turns: [EXPLAIN],
     check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 8, `longest sentence ${m.maxSentence} words, average ${m.avgSentence}`); },
   },
   {
-    id: 'M14', title: 'CEFR B1: sentences of 16 words or fewer, terms explained', config: { language: { on: true, cefr: 'B1' } }, turns: [EXPLAIN],
+    id: 'M14', agents: 'all', title: 'CEFR B1: sentences of 16 words or fewer, terms explained', config: { language: { on: true, cefr: 'B1' } }, turns: [EXPLAIN],
     check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 16, `longest sentence ${m.maxSentence} words, average ${m.avgSentence}; judge whether terms are explained`); },
   },
   {
-    id: 'M15', title: 'CEFR C1: fluent, no padding', config: { language: { on: true, cefr: 'C1' } }, turns: [EXPLAIN],
+    id: 'M15', agents: 'all', title: 'CEFR C1: fluent, no padding', config: { language: { on: true, cefr: 'C1' } }, turns: [EXPLAIN],
     check: ([[r]]) => review(`prose ${measure(r).proseWords} words, average sentence ${measure(r).avgSentence}; judge fluency and padding`),
   },
   {
-    id: 'M16', title: 'Flesch-Kincaid target 6', config: { language: { on: true, readability: { standard: 'flesch-kincaid', target: 6 } } }, turns: [EXPLAIN],
+    id: 'M16', agents: 'all', title: 'Flesch-Kincaid target 6', config: { language: { on: true, readability: { standard: 'flesch-kincaid', target: 6 } } }, turns: [EXPLAIN],
     check: ([[r]]) => pass(measure(r).fkGrade <= 7, `measured grade ${measure(r).fkGrade} (≤7)`),
   },
   {
-    id: 'M17', title: 'Simplified Technical English', config: { language: { on: true, vocabulary: 'ste' } }, turns: [EXPLAIN],
-    check: ([[r]]) => { const m = measure(r); return review(`longest sentence ${m.maxSentence} words (STE: 20 for procedures, 25 for descriptions); judge active voice, one meaning per word`); },
+    id: 'M17', agents: 'all', title: 'Simplified Technical English', config: { language: { on: true, vocabulary: 'ste' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 20, `longest sentence ${m.maxSentence} words (≤20); judge active voice, one meaning per word`); },
   },
   {
-    id: 'M18', title: 'Basic English vocabulary', config: { language: { on: true, vocabulary: 'basic-english' } }, turns: [EXPLAIN],
+    id: 'M18', agents: 'all', title: 'Basic English vocabulary', config: { language: { on: true, vocabulary: 'basic-english' } }, turns: [EXPLAIN],
     check: () => review('judge: simple words, technical terms allowed'),
   },
   {
-    id: 'M19', title: 'Plain language: says "you", main point first', config: { language: { on: true, plainLanguage: true } }, turns: [EXPLAIN],
+    id: 'M19', agents: 'all', title: 'Plain language: says "you", main point first', config: { language: { on: true, plainLanguage: true } }, turns: [EXPLAIN],
     check: ([[r]]) => pass(measure(r).you, `says "you": ${measure(r).you}; judge main point first`),
   },
   {
@@ -215,18 +222,75 @@ const CASES = [
     },
   },
   {
-    id: 'M22', title: '!level=A2 !words=20 apply to one turn only', turns: [`!level=A2 !words=20 ${EXPLAIN}`, 'Explain what a git branch is and when to use one.'],
+    id: 'M22', agents: 'all', title: '!level=A2 !words=20 apply to one turn only', turns: [`!level=A2 !words=20 ${EXPLAIN}`, 'Explain what a git branch is and when to use one.'],
     check: ([[r1, r2]]) => {
       const a = measure(r1);
       const b = measure(r2);
       return pass(a.proseWords <= 20 && b.proseWords > 20, `turn 1 prose ${a.proseWords} words (≤20), longest sentence ${a.maxSentence}; turn 2 prose ${b.proseWords} words (>20)`);
     },
   },
+  {
+    id: 'M23', agents: 'all', title: 'CEFR A2: sentences of 12 words or fewer', config: { language: { on: true, cefr: 'A2' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 12, `longest sentence ${m.maxSentence} words, average ${m.avgSentence}`); },
+  },
+  {
+    id: 'M24', agents: 'all', title: 'CEFR B2: sentences of 20 words or fewer', config: { language: { on: true, cefr: 'B2' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 20, `longest sentence ${m.maxSentence} words, average ${m.avgSentence}`); },
+  },
+  {
+    id: 'M25', agents: 'all', title: 'CEFR C2: precise and economical', config: { language: { on: true, cefr: 'C2' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.proseWords <= 80, `prose ${m.proseWords} words (≤80), average sentence ${m.avgSentence}; judge precision`); },
+  },
+  {
+    id: 'M26', agents: 'all', title: 'Preset simple: A2, plain language, Oxford 3000', config: { language: { on: true, preset: 'simple' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 12 && m.you, `longest sentence ${m.maxSentence} words (≤12); says "you": ${m.you}; judge common words`); },
+  },
+  {
+    id: 'M27', agents: 'all', title: 'Preset global: B1, Globish', config: { language: { on: true, preset: 'global' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 16, `longest sentence ${m.maxSentence} words (≤16); judge Globish words, terms explained`); },
+  },
+  {
+    id: 'M28', agents: 'all', title: 'Preset technical: B2, Simplified Technical English', config: { language: { on: true, preset: 'technical' } }, turns: [EXPLAIN],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 20, `longest sentence ${m.maxSentence} words (≤20); judge active voice, approved words`); },
+  },
+  {
+    id: 'M29', agents: 'all', title: '!level=simple applies a preset for one turn', turns: [`!level=simple ${EXPLAIN}`],
+    check: ([[r]]) => { const m = measure(r); return pass(m.maxSentence <= 12 && m.you, `longest sentence ${m.maxSentence} words (≤12); says "you": ${m.you}`); },
+  },
+  {
+    id: 'M30', agents: 'all', title: '!level=A2 !keep holds for later turns; !reset drops it',
+    turns: [`!level=A2 !keep ${EXPLAIN}`, 'Explain what a git branch is and when to use one.', '!reset Explain what a pull request is and why teams use them.'],
+    check: ([[r1, r2, r3]]) => {
+      const [a, b, c] = [r1, r2, r3].map(measure);
+      return pass(a.maxSentence <= 12 && b.maxSentence <= 12, `longest sentence: turn 1 ${a.maxSentence}, turn 2 ${b.maxSentence} (≤12); after !reset ${c.maxSentence} (no limit)`);
+    },
+  },
+  {
+    id: 'M31', agents: 'all', title: 'Asked for B1, the agent saves the level and uses it', skill: true,
+    turns: ['Use B1 English in your replies from now on, and save that setting.', 'Explain what a git branch is and when to use one.'],
+    check: ([[, r2]], ctx) => {
+      // User scope (.rc/config.json) or project scope (.response-config.json) both count.
+      const read = (f) => { try { return JSON.parse(fs.readFileSync(path.join(ctx.dir, f), 'utf8')).language ?? {}; } catch { return {}; } };
+      const langs = ['.rc/config.json', '.response-config.json'].map(read);
+      const lang = langs.find((l) => l.cefr) ?? {};
+      const saved = langs.some((l) => l.on === true && l.cefr === 'B1');
+      const m = measure(r2);
+      return pass(saved && m.maxSentence <= 16, `saved language ${JSON.stringify(lang)}; turn 2 longest sentence ${m.maxSentence} (≤16)`);
+    },
+  },
+  {
+    id: 'M32', agents: 'all', title: 'Gunning Fog target 8', config: { language: { on: true, readability: { standard: 'gunning-fog', target: 8 } } }, turns: [EXPLAIN],
+    check: ([[r]]) => pass(measure(r).fog <= 9, `measured Fog ${measure(r).fog} (≤9)`),
+  },
+  {
+    id: 'M33', agents: 'all', title: 'Flesch Reading Ease target 70', config: { language: { on: true, readability: { standard: 'flesch-reading-ease', target: 70 } } }, turns: [EXPLAIN],
+    check: ([[r]]) => pass(measure(r).readingEase >= 65, `measured Reading Ease ${measure(r).readingEase} (≥65)`),
+  },
 ];
 
 // ---------------------------------------------------------------- the project each case runs in
 
-function fixture(kind) {
+function fixture(kind, opts = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rc-eval-'));
   const w = (f, t) => { fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true }); fs.writeFileSync(path.join(dir, f), t); };
   w('package.json', JSON.stringify({ name: 'eval-fixture', version: '1.0.0', type: 'module', scripts: { test: 'node --test', build: 'node build.mjs' } }, null, 2));
@@ -236,6 +300,10 @@ function fixture(kind) {
   w('build.mjs', "import fs from 'node:fs';\nfs.mkdirSync('build', { recursive: true });\nfs.copyFileSync('src/util.js', 'build/util.js');\n");
   w('build/util.js', 'export function foo(a, b) {\n  return a + b;\n}\n');
   w('README.md', '# eval-fixture\n\nA tiny project used by the response-config evals.\n');
+  if (opts.skill) {
+    // This checkout's skill at project scope, so the agent finds the current CLI (--level).
+    for (const d of ['.claude/skills', '.agents/skills']) fs.cpSync(path.join(REPO, 'skills', 'response-config'), path.join(dir, d, 'response-config'), { recursive: true });
+  }
   spawnSync('git', ['init', '-q'], { cwd: dir });
   return dir;
 }
@@ -325,7 +393,7 @@ function main() {
     const log = [`# ${c.id}: ${c.title}`, '', `Agent: ${AGENT} ${version}`, ''];
     let ctx = {};
     for (const r of runs) {
-      const dir = fixture(c.fixture);
+      const dir = fixture(c.fixture, { skill: c.skill });
       const rc = path.join(dir, '.rc');
       fs.mkdirSync(rc, { recursive: true });
       fs.writeFileSync(path.join(rc, 'config.json'), JSON.stringify(r.config ?? {}, null, 2));

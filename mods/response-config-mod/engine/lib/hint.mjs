@@ -57,7 +57,7 @@ const VOCAB = {
 };
 
 const PLAIN =
-  'Plain language: active voice, short sentences, common words, address the reader as "you", main point first.';
+  'Plain language: main point first, active voice, short sentences, common words. Speak to the reader directly as "you" ("you can", "your files"), never in impersonal terms.';
 
 // The config patch the tags stand for. `!keep` stores the same patch as a session override.
 export function tagPatch(tags = {}) {
@@ -152,20 +152,29 @@ export function renderRules(cfg) {
       );
     }
   }
-  if (cfg.language.on) {
-    const lang = resolveLanguage(cfg.language);
-    lines.push('LANGUAGE');
-    if (lang.cefr) lines.push(`- ${CEFR[lang.cefr]}`);
-    const r = lang.readability;
-    if (r) lines.push(`- ${READABILITY[r.standard](r.target)}`);
-    if (lang.vocabulary) lines.push(`- ${VOCAB[lang.vocabulary]}`);
-    if (lang.plainLanguage) lines.push(`- ${PLAIN}`);
-    lines.push('- Code, identifiers, commands and quoted output are exempt from these language limits.');
-  }
+  lines.push(...languageLines(cfg));
   lines.push(
     'TAGS: if the user message has !verbose (full detail this turn), !plain (plain language), !level=<A1-C2>, !words=<n>, or !off (ignore these rules this turn), apply it for that turn only.',
   );
   return lines.join('\n');
+}
+
+// The LANGUAGE block. The prompt hint repeats it in full: a level set by a tag or kept with
+// !keep is not in the session's rules, and a bare "A2" or "simple" tells the model too little.
+export function languageLines(cfg) {
+  if (!cfg.language.on) return [];
+  const lang = resolveLanguage(cfg.language);
+  const lines = ['LANGUAGE'];
+  if (lang.cefr) lines.push(`- ${CEFR[lang.cefr]}`);
+  if (['A1', 'A2', 'B1'].includes(lang.cefr)) {
+    lines.push('- The sentence limit is a hard cap: count the words of each sentence before you send and split any that runs over.');
+  }
+  const r = lang.readability;
+  if (r) lines.push(`- ${READABILITY[r.standard](r.target)}`);
+  if (lang.vocabulary) lines.push(`- ${VOCAB[lang.vocabulary]}`);
+  if (lang.plainLanguage) lines.push(`- ${PLAIN}`);
+  lines.push('- Code, identifiers, commands and quoted output are exempt from these language limits.');
+  return lines;
 }
 
 function itemLines(ledger, emoji, limit = 12) {
@@ -207,11 +216,6 @@ export function renderDigest(cfg) {
     const mark = cfg.structured.statusEmoji ? `${E.open} ` : '';
     parts.push(`summary then "- ${mark}${ids}" items under ${heads} headings only, closed items only in a Resolved line, IDs never reused`);
   }
-  if (cfg.language.on) {
-    const l = resolveLanguage(cfg.language);
-    const bits = [l.cefr, l.readability && `${l.readability.standard} ${l.readability.target}`, l.vocabulary, l.plainLanguage && 'plain language'];
-    parts.push(`language: ${bits.filter(Boolean).join(', ')}`);
-  }
   return parts.length ? `Rules: ${parts.join('; ')}.` : '';
 }
 
@@ -227,6 +231,7 @@ export function renderPromptHint(cfg, ledger, { resolved = [], tags = {}, proble
   else {
     const digest = renderDigest(cfg);
     if (digest) lines.push(digest);
+    lines.push(...languageLines(cfg));
   }
   const tagNames = Object.entries(tags).filter(([k]) => k !== 'keep' && k !== 'reset')
     .map(([k, v]) => (v === true ? `!${k}` : `!${k}=${v}`));

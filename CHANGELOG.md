@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The per-prompt hint spells out the LANGUAGE block. A level set with `!level=` or kept with `!keep` used to reach the model only as its name, with no sentence limit (EVAL-7).
+- A1, A2 and B1 sentence limits are called a hard cap: count each sentence's words before sending.
+- Plain language asks for "you" ("you can", "your files"), never impersonal terms (EVAL-8).
+- Evals: the language cases run on Claude, Codex and Copilot; new cases M23 to M33 cover A2, B2, C2, the three presets, `!level=simple`, `!keep` and `!reset`, the agent saving a level when asked, Gunning Fog and Flesch Reading Ease. The measure skips item IDs and adds Fog and Reading Ease.
+
 ## 0.1.2
 
 - A note added after the managed style file's provenance line now reads as a hand edit ("drifted"), not "exists without provenance" (STY-2).

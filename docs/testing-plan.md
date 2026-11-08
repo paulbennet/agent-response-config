@@ -21,9 +21,9 @@ This plan covers every feature of the `response-config` skill and every way to i
 | J. Copilot CLI, live | 0 | 6 |
 | K. Copilot in VS Code, live | 0 | 4 |
 | L. Distribution | 4 | 5 |
-| M. Reply quality evals | 0 | 22 |
+| M. Reply quality evals | 0 | 33 |
 | N. Platforms | 2 | 3 |
-| **Total** | **75** | **81** |
+| **Total** | **75** | **92** |
 
 All 75 auto cases pass. Issues found along the way are listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
 
@@ -64,6 +64,11 @@ All 75 auto cases pass. Issues found along the way are listed below. Everything 
 | EVAL-4 | M3, M4, Codex and Copilot evals | Asked "Redis or Postgres?", Copilot (twice) and Codex (once) chose in the summary and listed the options as suggestions, so there was no D item to answer. The rules described how decisions look, not when a choice is one. Fixed: a choice that is the user's to make goes under Decisions with the pick marked "(recommended)", not settled in the summary. M3 and M4 pass on both. |
 | EVAL-5 | M7, Codex eval | Codex ran the delete without asking first; `codex exec`'s sandbox blocked it. The rules keep confirmations full length but do not ask for one. Won't fix: asking first is agent behaviour, not reply style. |
 | EVAL-6 | M21, Claude eval | With only Actions and Questions configured, the hint still offered `Next IDs: A1 S1 Q1 D1`, and the model wrote S1 and D1 under Actions. Fixed: Next IDs lists only the configured types. M21 passes. |
+| EVAL-7 | M29, M30, evals | A level set by `!level=` or kept with `!keep` reached the model only as its name ("mode: ... simple", "language: A2"), with no sentence limit, because the session's full rules had the config's language. Claude and Codex wrote 17 to 27 word sentences. Fixed: every prompt hint spells out the LANGUAGE block. M29 and M30 pass on Claude and Codex. |
+| EVAL-8 | M19, Codex eval | Under plain language Codex wrote impersonally, twice, with no "you". Fixed: the rule says to speak to the reader as "you" ("you can", "your files"), never in impersonal terms. M19 passes on all three. |
+| EVAL-9 | M13, eval check | The sentence measure counted an item's emoji and ID ("🔵 S1") as words, so an 8-word item read as 9. Fixed in `tools/evals.mjs`. |
+| EVAL-10 | M31, eval check | Codex saved the level at project scope (`.response-config.json`); the check read only the user file. Fixed: both count. |
+| EVAL-11 | M13, M26, M29, Copilot eval | Copilot writes sentences 1 or 2 words over the A1 and A2 limits (9 for 8, 13 or 14 for 12), even after a hard-cap line was added for A1 to B1 sentence limits. Claude and Codex keep to them. Open: model adherence. |
 | MOD-3 | H21, mod test | A reply sent by an items pane button skipped the mod's own prompt.submit hook (the engine leaves out the calling plugin), so the ledger kept the item open until the model closed it. Fixed: the pane applies the reply to the ledger before it submits. |
 
 ## How to run the auto cases
@@ -358,6 +363,19 @@ Run each in a fresh session with default settings unless the row says otherwise.
 | M20 | `structured.showEmptySections=true` | All four headings, "none" when empty |
 | M21 | `structured.sections=["actions","questions"]` | Only those two sections |
 | M22 | `!level=A2 !words=20` in one prompt | That turn follows both; the next turn does not |
+| M23 | `cefr=A2` | Sentences of 12 words or fewer |
+| M24 | `cefr=B2` | Sentences of 20 words or fewer |
+| M25 | `cefr=C2` | Precise, within the prose budget |
+| M26 | `preset=simple` | Sentences of 12 words or fewer; says "you" |
+| M27 | `preset=global` | Sentences of 16 words or fewer |
+| M28 | `preset=technical` | Sentences of 20 words or fewer; active voice |
+| M29 | `!level=simple` in one prompt | That turn: sentences of 12 words or fewer; says "you" |
+| M30 | `!level=A2 !keep`, a plain prompt, then `!reset` | Turns 1 and 2 at A2 |
+| M31 | "Use B1 English from now on, and save that setting." | Config saved with `cefr=B1` (user or project scope); next reply at B1 |
+| M32 | `readability={"standard":"gunning-fog","target":8}` | Measured Fog 9 or lower |
+| M33 | `readability={"standard":"flesch-reading-ease","target":70}` | Measured Reading Ease 65 or higher |
+
+The language cases (M13 to M19, M22 to M33) run on all three agents. M31 gets this checkout's skill at project scope.
 
 Run with `npm run evals -- --agent <agent>` (`tools/evals.mjs`, see `evals/README.md`); M11, M15, M17 and M18 are judged by reading the replies.
 
@@ -415,6 +433,32 @@ Run with `npm run evals -- --agent <agent>` (`tools/evals.mjs`, see `evals/READM
 Third Claude run, after EVAL-1 to EVAL-4: 12 pass, 6 fail, 4 review. The fails were M21 (EVAL-6), two check bugs (M19 did not count "your"; M4 counted a "(still open)" restatement as a repeat) and run-to-run variance (M10, M13, M14). After the fixes all six pass.
 
 First-run failures fixed: M21 extra sections (the rules now say to use only the listed sections, and the digest names only those); M10 items not counted (the budget now counts items and discourages unneeded tables or code); M2 and M7 were harness problems (PowerShell commands not allowed; the delete check). Also added: "Never add an item only to close it in the same reply" (from I7 and J4).
+
+**Language cases, all agents, 2026-11-08** (Claude Code 2.1.314, Codex CLI 0.165.0, Copilot CLI 1.0.107). First run: Claude 15 pass, 2 fail; Codex 12 pass, 5 fail; Copilot 14 pass, 3 fail; M15 and M18 are review on each. After EVAL-7 to EVAL-10 and reruns of the failed cases:
+
+| ID | Claude | Codex | Copilot |
+|---|---|---|---|
+| M13 A1 | Pass (8) | Pass (8) | Fail (9, EVAL-11) |
+| M14 B1 | Pass (15) | Pass (14) | Pass (12) |
+| M15 C1 | Review | Review | Review |
+| M16 FK 6 | Pass (3.4) | Pass (6.8) | Pass (3.2) |
+| M17 STE | Pass (12) | Pass (15) | Pass (12) |
+| M18 Basic English | Review | Review | Review |
+| M19 plain | Pass | Pass (after EVAL-8) | Pass |
+| M22 `!level=A2 !words=20` | Pass | Pass | Pass |
+| M23 A2 | Pass (9) | Pass (10) | Pass (11) |
+| M24 B2 | Pass (12) | Pass (15) | Pass (14) |
+| M25 C2 | Pass | Pass | Pass |
+| M26 simple | Pass (11) | Pass (11) | Fail (13, EVAL-11) |
+| M27 global | Pass (13) | Pass (13) | Pass (12) |
+| M28 technical | Pass (12) | Pass (12) | Pass (10) |
+| M29 `!level=simple` | Pass (after EVAL-7) | Pass | Fail (14, EVAL-11) |
+| M30 `!keep`, `!reset` | Pass (after EVAL-7) | Pass | Pass |
+| M31 asked for B1 | Pass | Pass (project scope) | Pass |
+| M32 Fog 8 | Pass (8) | Pass (7.3) | Pass (6.3) |
+| M33 Reading Ease 70 | Pass (85.3) | Pass (68.6) | Pass (73.3) |
+
+Numbers are the longest sentence in words, or the measured score.
 
 ## N. Platforms
 

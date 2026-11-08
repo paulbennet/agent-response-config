@@ -67,6 +67,21 @@ test('hooks: a level kept with !keep reaches later prompts until !reset', () => 
   assert.doesNotMatch(prompt('after'), /simple/);
 });
 
+test('the prompt hint spells out a tagged or kept level, not only its name (eval M29, M30)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rc-lang-'));
+  const env = { ...process.env, RC_CONFIG_DIR: path.join(dir, 'cfg'), CLAUDE_CONFIG_DIR: path.join(dir, 'claude') };
+  run({ agent: 'claude', event: 'session-start', input: { session_id: 's', cwd: dir, source: 'startup' }, env });
+  const prompt = (text) => JSON.parse(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', prompt: text, cwd: dir }, env })).hookSpecificOutput.additionalContext;
+  const once = prompt('!level=simple explain');
+  assert.match(once, /CEFR A2: sentences of 12 words or fewer/);
+  assert.match(once, /Plain language:/);
+  assert.match(once, /Oxford 3000/);
+  assert.doesNotMatch(once, /BREVITY/);
+  assert.doesNotMatch(prompt('no tag'), /LANGUAGE/);
+  prompt('!level=B1 !keep');
+  assert.match(prompt('later'), /CEFR B1: sentences of 16 words or fewer/);
+});
+
 test('CLI: --level, --vocab and --readability set the language block in one step', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rc-cli-'));
   const env = { ...process.env, RC_CONFIG_DIR: path.join(dir, 'cfg') };

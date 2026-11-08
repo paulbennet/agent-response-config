@@ -14,7 +14,7 @@ Before a run:
 - Install the agent's response-config hooks for your user with `setup.mjs --agent claude|codex|copilot --scope user`, from this checkout, so the run tests this code. Claude runs turn the plugin and the mod off through `--settings` (the plugin's cached copy may be older; the mod would take over from the hooks).
 - Run it from a normal terminal, not inside an agent session.
 
-Each case gets a throwaway project (a tiny Node package with a test, a `build/` folder and a git repo) and its own `RC_CONFIG_DIR` holding only that case's settings, so your config and ledgers are untouched. Follow-up turns resume the same session (`claude --resume`, `codex exec resume --last`, `copilot --continue`). M8 (compaction) runs on Claude only; M9 to M22 run on Claude only, as the plan asks.
+Each case gets a throwaway project (a tiny Node package with a test, a `build/` folder and a git repo) and its own `RC_CONFIG_DIR` holding only that case's settings, so your config and ledgers are untouched. Follow-up turns resume the same session (`claude --resume`, `codex exec resume --last`, `copilot --continue`). M8 (compaction) runs on Claude only; M9 to M12, M20 and M21 run on Claude only; the language cases (M13 to M19, M22 to M33) run on every agent.
 
 Results go to `evals/results/<agent>-<time>/` (not committed): `report.md` with one row per case, and one transcript per case with the config, prompts, replies and measures. A case is `pass` or `fail` by a measured rule, or `review` where a person has to judge (M11, M15, M17, M18).
 
