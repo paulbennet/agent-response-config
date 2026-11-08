@@ -9,7 +9,7 @@ import { renderRules } from './hint.mjs';
 export const STYLE_NAME = 'response-config-managed';
 export const STYLE_FILE = `${STYLE_NAME}.md`;
 const VERSION = 'v1';
-const PROV_RE = /<!-- response-config (v\d+) config=([0-9a-f]{16}) body=([0-9a-f]{16}) -->\s*$/;
+const PROV_RE = /<!-- response-config (v\d+) config=([0-9a-f]{16}) body=([0-9a-f]{16}) -->/g;
 
 // Line endings are normalised so an editor that saves CRLF does not count as an edit.
 const sha = (s) => crypto.createHash('sha256').update(String(s).replace(/\r\n/g, '\n')).digest('hex').slice(0, 16);
@@ -46,10 +46,13 @@ export function compileStyle(cfg) {
   return { content, configHash, bodyHash, file };
 }
 
+// The last provenance comment anywhere in the file counts. Text after it is a hand edit,
+// so the file reads as drifted rather than unmanaged (STY-2).
 export function parseProvenance(text) {
-  const m = PROV_RE.exec(text);
+  const m = [...String(text).matchAll(PROV_RE)].at(-1);
   if (!m) return undefined;
-  return { version: m[1], configHash: m[2], bodyHash: m[3], content: text.slice(0, m.index) };
+  const trailing = text.slice(m.index + m[0].length).trim() !== '';
+  return { version: m[1], configHash: m[2], bodyHash: m[3], content: text.slice(0, m.index), trailing };
 }
 
 export function claudeDir(env = process.env) {
@@ -81,7 +84,7 @@ export function styleStatus(cfg, opts = {}) {
   const text = fs.readFileSync(file, 'utf8');
   const prov = parseProvenance(text);
   if (!prov) return { state: 'unmanaged', file, want };
-  const bodyIntact = sha(prov.content) === prov.bodyHash;
+  const bodyIntact = !prov.trailing && sha(prov.content) === prov.bodyHash;
   if (!bodyIntact) return { state: 'drifted', file, want, prov };
   if (prov.configHash !== want.configHash) return { state: 'stale', file, want, prov };
   return { state: 'in-sync', file, want, prov };

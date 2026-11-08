@@ -25,7 +25,7 @@ This plan covers every feature of the `response-config` skill and every way to i
 | N. Platforms | 2 | 3 |
 | **Total** | **75** | **81** |
 
-All 75 auto cases pass except one known issue, listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
+All 75 auto cases pass. Issues found along the way are listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
 
 ### Why the manual cases cannot run here
 
@@ -43,7 +43,7 @@ All 75 auto cases pass except one known issue, listed below. Everything that tou
 
 | ID | Found by | Issue |
 |---|---|---|
-| STY-2 | `tools/e2e.mjs` | A note added after the last line of the managed style file makes it "unmanaged" instead of "drifted". The note is kept, so nothing is lost. The warning says the file "exists without provenance", which is misleading. Fix: find the provenance comment anywhere in the file and treat text after it as a hand edit. |
+| STY-2 | `tools/e2e.mjs` | A note added after the last line of the managed style file makes it "unmanaged" instead of "drifted". The note is kept, so nothing is lost. The warning says the file "exists without provenance", which is misleading. Fixed: the last provenance comment anywhere in the file counts, and text after it reads as a hand edit (drifted). Unit test added; e2e STY-2 passes. |
 | HOOK-1 | G5, live | `hook.mjs` exits after 2.5 s. On a busy Claude Code startup, SessionStart took 3.4 s (about 0.4 s normally), so it exited without printing. The first prompt sent the full rules instead, so the model still got them. Fixed: the timer is now 8 s, under the 10 s host timeouts. Retest G5. |
 | PARSE-1 | G7, live | The rules print headings as `Actions (A)` and the model copies them as `## Actions (A)`, but the parser accepted only `Actions`, so the ledger stayed empty. Indented code fences were also not stripped. Fixed in `parse.mjs`, with tests. Retest G7. |
 | PARSE-2 | G8, live | `- A1 done: installed eslint` and `- Q1 answered: yes` were read as new items with the same ID, so the real items were retired as superseded and stayed open. `- A1 still open: ...` did the same. Fixed: a leading status with a note closes the item, and "still open" reopens it. Retest G8. |
@@ -57,7 +57,7 @@ All 75 auto cases pass except one known issue, listed below. Everything that tou
 | MOD-2 | H13, live | The items pane cut the list by item count, not rows, so items were hidden; buttons stacked; a D item without inline options had no button at all. The band `A0 S1 Q1 D1` read like item IDs. Fixed: the pane draws every item and the engine scrolls it once focused, buttons sit in a row, every Q and D has Answer, and the band reads `open A:0 S:1 Q:1 D:1`. |
 | ENGINE-1 | H13 review, live | Claude Code 2.1.310 terminal: no keyboard route from the prompt or band into a plugin pane (`ctrl+x tab` focuses the band only; `pane:next` works only inside a pane; a band press keeps the keys, so `focus` on open is refused; mouse clicks do not reach it). The mod opens panes by command, which grants the keys, and the terminal band names those commands instead of drawing buttons. Feedback for Claude Code. |
 | PARSE-8 | J4, live | `- A2 Review README.md against the repo: done.` stayed open. Fixed: a status after a colon at the end closes the item. |
-| HOOK-3 | J2, live | Copilot runs sessionStart and the first userPromptTransformed at the same moment; the prompt hook reads the ledger before session start saved it, so turn 1 carries the full rules twice. Harmless; open. |
+| HOOK-3 | J2, live | Copilot runs sessionStart and the first userPromptTransformed at the same moment; the prompt hook reads the ledger before session start saved it, so turn 1 carried the full rules twice. Fixed: the two claim the session's first rules with an exclusive file; the winner sends them and the other leaves them out. Unit test added; retest J2. |
 | EVAL-1 | M9, eval | All four brevity levels used the one 80-word default budget, so their replies were the same length (low 74, extreme 71). Fixed: each level has its own default (low 150, medium 110, high 80, extreme 40); `minimal.maxWords` now defaults to null, and a number set there still wins. M9 passes. |
 | EVAL-2 | M10, eval | With `maxWords=30` the reply had 53 words, padded with S and Q items nobody asked for. Fixed: when the budget is 40 words or fewer, the rules call it a hard cap to count before sending, with no extra tips, and say to add no suggestions or questions the user did not ask for; the digest repeats the hard cap. M10 passes. |
 | EVAL-3 | M2, Codex eval | Codex summarised a failing test instead of showing its output. The rules say failing test output stays full length, but not that it is quoted. Fixed: the rules say to quote error and failing test output verbatim in a code block. M2 passes on Codex. |
@@ -181,7 +181,7 @@ All auto, in `npm test` and `npm run test:e2e`. All pass.
 | F1 | Generation is stable; unrelated keys do not change it | Auto | Pass |
 | F2 | Created, unchanged, stale, then regenerated on a config change | Auto | Pass |
 | F3 | A hand edit is kept and reported; `--style sync --force` regenerates | Auto, e2e STY-1 | Pass |
-| F4 | A note added after the last line is kept but reported as "unmanaged" | Auto, e2e STY-2 | Known issue |
+| F4 | A note added after the last line is kept and reported as "drifted" | Auto, e2e STY-2 | Pass |
 | F5 | CRLF line endings are not an edit | Auto | Pass |
 | F6 | Session start regenerates after a direct edit of the JSON file | Auto, e2e CFG-2 | Pass |
 | F7 | Project scope writes at the project root from any subfolder | Auto | Pass |

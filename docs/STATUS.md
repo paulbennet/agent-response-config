@@ -6,7 +6,7 @@ What is verified, what is not, and where the build differs from [implementation-
 
 | Check | How |
 |---|---|
-| Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 66 tests) on Windows |
+| Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 76 tests) on Windows |
 | Mod engine copy matches the skill scripts | `node tools/sync-mod.mjs --check` (part of `npm test`) |
 | Install, plugin and setup flows end to end | `npm run test:e2e` |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |

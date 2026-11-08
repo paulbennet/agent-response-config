@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.2
 
+- A note added after the managed style file's provenance line now reads as a hand edit ("drifted"), not "exists without provenance" (STY-2).
+- Copilot: session start and the first prompt hook run at once, so turn 1 carried the full rules twice. The two now claim the session's first rules; only the winner sends them (HOOK-3).
 - English level in one step: `config.mjs --level B1|plain|simple|global|technical|off`, `--readability flesch-kincaid=8|off` and `--vocab ste|off`, each switching language on. The skill tells agents to use them.
 - Language presets in `language.preset`: `simple` (A2, plain language, Oxford 3000), `global` (B1, Globish), `technical` (B2, Simplified Technical English). A preset wins on the fields it sets; changing one of them writes the preset out and clears it, so the change is not hidden.
 - Session level: `!keep` keeps a message's other tags for the rest of the session (hooks and mod; the hooks store it in the ledger), `!reset` drops them. `!level=` also takes the presets, `plain` and `off`. The mod adds `/response-config level <x>`.

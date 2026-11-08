@@ -82,6 +82,16 @@ test('a CRLF re-save is not drift (review L2)', () => {
   assert.equal(styleStatus(cfg, opts).state, 'in-sync');
 });
 
+test('a note after the provenance line is drift, not unmanaged, and is kept (STY-2)', () => {
+  const { cfg, opts } = setup();
+  syncStyle(cfg, opts);
+  const file = styleStatus(cfg, opts).file;
+  fs.appendFileSync(file, 'my note\n');
+  assert.equal(styleStatus(cfg, opts).state, 'drifted');
+  assert.equal(syncStyle(cfg, opts).action, 'drift');
+  assert.match(fs.readFileSync(file, 'utf8'), /my note/);
+});
+
 test('activate refuses to rewrite a settings file that does not parse (review H1)', () => {
   const { cfg, opts, dir } = setup();
   const broken = '{ "outputStyle": "Concise", }';

@@ -7,7 +7,7 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { RULES_EVERY, run } from '../skills/response-config/scripts/hook.mjs';
 import { loadConfig, validate } from '../skills/response-config/scripts/lib/config.mjs';
-import { loadLedger, markModActive } from '../skills/response-config/scripts/lib/ledger.mjs';
+import { claimFirstRules, loadLedger, markModActive } from '../skills/response-config/scripts/lib/ledger.mjs';
 import { lastAssistantText } from '../skills/response-config/scripts/lib/adapters/index.mjs';
 
 const SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'response-config', 'scripts');
@@ -99,6 +99,24 @@ test('codex stop prints {} and copilot formats per event', () => {
   const p = JSON.parse(run({ agent: 'copilot', event: 'prompt-transformed', input: { sessionId: 'c', cwd: e.dir, prompt: 'hi', transformedPrompt: 'hi' }, env: e }));
   assert.match(p.modifiedTransformedPrompt, /^hi\n\n\[response-config\]/);
   assert.equal(run({ agent: 'copilot', event: 'stop', input: { sessionId: 'c', cwd: e.dir }, env: e }), '');
+});
+
+test('copilot: session start and first prompt at once send the full rules once (HOOK-3)', () => {
+  // The prompt hook won the claim: session start, on a ledger not yet saved, leaves the rules out.
+  const e1 = env();
+  claimFirstRules('copilot', 'c', e1);
+  const s = run({ agent: 'copilot', event: 'session-start', input: { sessionId: 'c', cwd: e1.dir }, env: e1 });
+  assert.doesNotMatch(s, /BREVITY/);
+  // Session start won: the first prompt sends only the digest and records the rules as sent.
+  const e2 = env();
+  claimFirstRules('copilot', 'c', e2);
+  const p = JSON.parse(run({ agent: 'copilot', event: 'prompt-transformed', input: { sessionId: 'c', cwd: e2.dir, prompt: 'hi', transformedPrompt: 'hi' }, env: e2 }));
+  assert.doesNotMatch(p.modifiedTransformedPrompt, /BREVITY/);
+  assert.ok(loadLedger('copilot', 'c', e2).session.rulesSentAt > 0);
+  // No race: the first prompt alone still gets the full rules.
+  const e3 = env();
+  const q = JSON.parse(run({ agent: 'copilot', event: 'prompt-transformed', input: { sessionId: 'c', cwd: e3.dir, prompt: 'hi', transformedPrompt: 'hi' }, env: e3 }));
+  assert.match(q.modifiedTransformedPrompt, /BREVITY/);
 });
 
 test('copilot VS Code compatible payload gets Claude-style output', () => {

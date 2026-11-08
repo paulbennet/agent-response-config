@@ -54,6 +54,28 @@ export function claimEvent(agent, event, raw, env = process.env) {
   return true;
 }
 
+// The first full rules of a session: Copilot runs sessionStart and the first prompt hook at
+// the same moment, before either has saved the ledger, so both would send them (HOOK-3).
+// The first to claim sends the rules; the other leaves them out.
+export function claimFirstRules(agent, sessionId, env = process.env) {
+  const dir = claimsDir(env);
+  const file = path.join(dir, `rules-${safe(agent)}-${safe(sessionId)}`);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, String(Date.now()), { flag: 'wx' });
+    return true;
+  } catch (e) {
+    if (e.code !== 'EEXIST') return true;
+    try {
+      if (Date.now() - fs.statSync(file).mtimeMs < CLAIM_MS) return false;
+      fs.writeFileSync(file, String(Date.now()));
+    } catch {
+      /* claim anyway */
+    }
+    return true;
+  }
+}
+
 function pruneDir(dir, maxAgeMs) {
   let names = [];
   try {

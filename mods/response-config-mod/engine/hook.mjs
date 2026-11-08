@@ -9,7 +9,7 @@ import { loadConfig } from './lib/config.mjs';
 import { deepMerge } from './lib/core.mjs';
 import { effectiveConfig, keptOverrides, renderPromptHint, renderSessionHint } from './lib/hint.mjs';
 import {
-  applyReplies, claimEvent, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeReused,
+  applyReplies, claimEvent, claimFirstRules, isModActive, loadLedger, pruneOld, registerItems, saveLedger, takeReused,
 } from './lib/ledger.mjs';
 import { hasTags, parseAssistantItems, parseTags, parseUserReplies } from './lib/parse.mjs';
 import { driftNote, syncStyle } from './lib/style.mjs';
@@ -61,6 +61,10 @@ export function run({ agent, event, input, env = process.env }) {
       }
     }
     const cfg = effectiveConfig(config, ledger?.session.overrides);
+    // The first prompt hook already claimed the session's first rules (HOOK-3): send only notes.
+    if (ledger && !ledger.session.rulesSentAt && !claimFirstRules(agent, n.sessionId, env)) {
+      return adapter.format(event, { hint: notes.map((x) => `[response-config] NOTE: ${x}`).join('\n'), normalized: n });
+    }
     const hint = renderSessionHint(cfg, ledger, { notes });
     if (ledger) {
       ledger.session.rulesSentAt = Date.now();
@@ -93,10 +97,14 @@ export function run({ agent, event, input, env = process.env }) {
       ledger.turn += 1;
       const s = ledger.session;
       s.overrides = kept;
-      withRules = !s.rulesSentAt || ledger.turn - s.rulesTurn >= RULES_EVERY;
+      // A session start running at this moment may hold the first rules (HOOK-3).
+      withRules = s.rulesSentAt
+        ? ledger.turn - s.rulesTurn >= RULES_EVERY
+        : claimFirstRules(agent, n.sessionId, env);
       resolved = applyReplies(ledger, replies);
       reused = takeReused(ledger);
-      if (withRules) {
+      // Also when the session start holds the claim: it is sending the rules this turn.
+      if (withRules || !s.rulesSentAt) {
         s.rulesSentAt = Date.now();
         s.rulesTurn = ledger.turn;
       }

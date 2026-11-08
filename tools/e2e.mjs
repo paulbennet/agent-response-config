@@ -12,7 +12,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..').sp
 const SKILL = `${REPO}/skills/response-config`;
 const results = [];
 // Checks that fail today because of a known, documented issue (docs/testing-plan.md, Known issues).
-const KNOWN = new Set(['STY-2']);
+const KNOWN = new Set([]);
 const check = (id, name, fn) => {
   try {
     const note = fn();

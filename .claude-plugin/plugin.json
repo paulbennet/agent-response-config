@@ -1,6 +1,6 @@
 {
   "name": "response-config",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items. Ships the skill, an output style, and hooks that are on by default once the plugin is enabled.",
   "author": {
     "name": "Paul Bennet Joshua"
