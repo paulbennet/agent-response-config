@@ -14,7 +14,7 @@ What is verified, what is not, and where the build differs from [implementation-
 | Plugin hooks, setup hooks and the mod in live Claude Code sessions (terminal, desktop, VS Code) | [testing-plan.md](testing-plan.md) sections G and H |
 | Codex hooks: `hooks.json` shape, trust flow, session start, per-prompt hint, Stop | Section I, Codex CLI |
 | Copilot CLI and Copilot in VS Code hooks | Sections J and K |
-| Reply quality on Claude Code, Codex and Copilot | `npm run evals` ([../evals/README.md](../evals/README.md)), section M |
+| Reply quality on Claude Code, Codex and Copilot | `npm run evals` ([../evals/README.md](../evals/README.md)), section M; language levels in [language-level-tests.md](language-level-tests.md) |
 
 ## Not verified yet
 
