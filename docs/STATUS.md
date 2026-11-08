@@ -16,10 +16,26 @@ What is verified, what is not, and where the build differs from [implementation-
 | Copilot CLI and Copilot in VS Code hooks | Sections J and K |
 | Reply quality on Claude Code, Codex and Copilot | `npm run evals` ([../evals/README.md](../evals/README.md)), section M; language levels in [language-level-tests.md](language-level-tests.md) |
 
-## Not verified yet
+## Pending
 
-- Install from GitHub through skills.sh and `gh skill`, and the Claude marketplace from a public repo (section L, after the repo is public).
-- macOS and Linux (section N).
+Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one is done, set its Result there and remove its row here.
+
+| ID | What | Blocked by | To unblock |
+|---|---|---|---|
+| A4 | Claude Code loads the skill from "keep answers short" without its name | Needs a live session outside Claude Code | Run in a normal terminal, skill only, no hooks |
+| A5 | Codex lists the skill and runs `$response-config` | Live Codex session | Run in Codex CLI |
+| A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Live Copilot session | Run in Copilot CLI |
+| B10 | "Use B1 English from now on" makes the agent run `config.mjs --level B1` | Live agent session | Run with G, I or J |
+| H22 | Mod bulk select live in the terminal, desktop and VS Code | A person clicking in the UI | Run H21's steps on all three surfaces |
+| H24 | Mod level select, preset fields and wizard language steps live | A person clicking in the UI | Open `/response-config pane` and a fresh-install wizard |
+| L5 | `npx skills add paulbennet/agent-response-config` from GitHub, project and `-g` | Repo is private | Make the repo public |
+| L6 | skills.sh page and README badge appear | L5 | Run L5 first |
+| L7 | `gh skill install` from GitHub | Repo is private; `gh` is 2.69, needs 2.90+ | Make the repo public; upgrade `gh` |
+| L8 | Claude marketplace install of both plugins | Repo is private | Make the repo public |
+| N3 | macOS: `npm test`, `npm run test:e2e` | Only Windows here | A macOS machine |
+| N4 | Linux: the same, plus `XDG_CONFIG_HOME` | Only Windows here | A Linux machine or WSL |
+| N5 | One live agent on macOS or Linux, G5 to G8 | N3 or N4 | Run after N3 or N4 |
+| REL-1 | Release the CHANGELOG "Unreleased" entries | Not versioned yet | Bump to 0.1.3 in `package.json`, both plugin manifests and the CHANGELOG |
 
 ## Deviations from the plan
 

@@ -101,9 +101,9 @@ Last run: 2026-10-25, Windows 11, Node 22.23.4, Claude Code 2.1.310.
 | A1 | Frontmatter: `name` matches the folder and the kebab-case rule, `description` under 1024 characters, body under 500 lines, links to `references/` resolve | Auto, e2e SPEC-1 | Pass |
 | A2 | Codex metadata `agents/openai.yaml` has the expected keys and names the skill | Auto, e2e SPEC-2 | Pass |
 | A3 | Shipped files present after install: SKILL.md, scripts, references, defaults | Auto, e2e INST-* | Pass |
-| A4 | Claude Code loads the skill when you ask for terse replies or a CEFR level, without naming it | Manual | |
-| A5 | Codex lists the skill and runs it with `$response-config` | Manual | |
-| A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Manual | |
+| A4 | Claude Code loads the skill when you ask for terse replies or a CEFR level, without naming it | Manual | Pending |
+| A5 | Codex lists the skill and runs it with `$response-config` | Manual | Pending |
+| A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Manual | Pending |
 
 **A4 to A6 steps.** Install the skill only, no hooks. Start a session and type "keep your answers really short and give me numbered next steps". Pass when the agent loads the skill and the reply has a short summary plus `Actions` items.
 
@@ -120,7 +120,7 @@ Last run: 2026-10-25, Windows 11, Node 22.23.4, Claude Code 2.1.310.
 | B7 | `--show --json` lists the watched files with their times | Auto, `npm test` | Pass |
 | B8 | `--ledger path` and `--ledger clear` | Auto, e2e CFG-3 | Pass |
 | B9 | Config folder order: `RC_CONFIG_DIR`, `XDG_CONFIG_HOME`, then `%APPDATA%\response-config` on Windows | Auto, e2e CFG-4 | Pass |
-| B10 | Ask the agent "use B1 English from now on"; it runs `config.mjs --level B1` and says what changed | Manual, with G, I or J | |
+| B10 | Ask the agent "use B1 English from now on"; it runs `config.mjs --level B1` and says what changed | Manual, with G, I or J | Pending |
 | B11 | `--level`, `--vocab` and `--readability` set the language block in one step; bad values are refused | Auto, `npm test` | Pass |
 | B12 | A preset wins on its fields; changing one writes the preset out and clears it | Auto, `npm test` | Pass |
 | B13 | `!level=<x> !keep` reaches later prompts through the hooks until `!reset` | Auto, `npm test` | Pass |
@@ -268,9 +268,9 @@ Install with `/plugin install response-config-mod --marketplace paulbennet/agent
 | H19 | The same in the Claude desktop app | Manual | Pass (band, items pane and buttons work) |
 | H20 | The same in the VS Code extension | Manual | Pass (band, items pane and buttons work) |
 | H21 | Bulk select: x or the box picks items; the bar's Done, Skip and Do send one reply for all of them, the picked items leave the pane, and the pick clears | Auto, mod test | Pass after the MOD-3 fix |
-| H22 | The same live in the terminal, desktop and VS Code | Manual | |
+| H22 | The same live in the terminal, desktop and VS Code | Manual | Pending |
 | H23 | `/response-config level <x>` and `!keep` set a session level; the pane's level select saves a preset in one pick | Auto, mod test | Pass |
-| H24 | The level select, preset fields and wizard language steps live | Manual | |
+| H24 | The level select, preset fields and wizard language steps live | Manual | Pending |
 
 **H16 steps.** Install both plugins and start with `--debug`. Pass when the classic hooks print nothing for this session. The mod's rules are in the system prompt instead.
 
@@ -325,10 +325,10 @@ Turn on the VS Code hooks preview setting first.
 | L2 | Same for codex | Auto, e2e | Pass |
 | L3 | Same for github-copilot | Auto, e2e | Pass |
 | L4 | The installed copy runs | Auto, e2e | Pass |
-| L5 | `npx skills add paulbennet/agent-response-config --skill response-config` from GitHub, project and `-g` | Manual | |
-| L6 | The skills.sh page and README badge appear after real installs | Manual | |
-| L7 | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` | Manual, gh 2.90+ | |
-| L8 | Claude marketplace install of both plugins, as G4 and H8 | Manual | |
+| L5 | `npx skills add paulbennet/agent-response-config --skill response-config` from GitHub, project and `-g` | Manual | Pending |
+| L6 | The skills.sh page and README badge appear after real installs | Manual | Pending |
+| L7 | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` | Manual, gh 2.90+ | Pending |
+| L8 | Claude marketplace install of both plugins, as G4 and H8 | Manual | Pending |
 | L9 | A fresh clone passes `npm test` and `npm run test:e2e` | Manual | Pass (clone of `d2c6b51`: 66 tests; e2e 27/28, STY-2 known) |
 
 L5 and L6 send install telemetry, which is what lists the repo on skills.sh. L5 to L8 run after the repo is made public.
@@ -466,9 +466,9 @@ Numbers are the longest sentence in words, or the measured score.
 |---|---|---|---|
 | N1 | Windows: all auto suites | Auto | Pass |
 | N2 | Windows: PowerShell forms of the Copilot commands | Auto, e2e | Pass |
-| N3 | macOS: `npm test`, `npm run test:e2e` | Manual | |
-| N4 | Linux: the same, and `~/.config/response-config` or `XDG_CONFIG_HOME` is used | Manual | |
-| N5 | One live agent on macOS or Linux, with G5 to G8 | Manual | |
+| N3 | macOS: `npm test`, `npm run test:e2e` | Manual | Pending |
+| N4 | Linux: the same, and `~/.config/response-config` or `XDG_CONFIG_HOME` is used | Manual | Pending |
+| N5 | One live agent on macOS or Linux, with G5 to G8 | Manual | Pending |
 
 ## Suggested order for the manual cases
 
