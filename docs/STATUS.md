@@ -9,6 +9,7 @@ What is verified, what is not, and where the build differs from [implementation-
 | Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 78 tests) |
 | Install, plugin and setup flows end to end | `npm run test:e2e` |
 | `npm test` and e2e on Linux (with `XDG_CONFIG_HOME`), macOS and Windows | GitHub Actions, `.github/workflows/test.yml` (N3, N4) |
+| Plugin hooks in live `claude -p` sessions on macOS and Linux | Workflow `live`, `tools/live-ci.mjs` (N5) |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |
 | Plugin hooks and setup hooks in live Claude Code sessions (terminal, desktop, VS Code) | [testing-plan.md](testing-plan.md) section G |
 | Codex hooks: `hooks.json` shape, trust flow, session start, per-prompt hint, Stop | Section I, Codex CLI |
@@ -27,7 +28,6 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 |---|---|---|---|
 | L6 | README badge shows the install count (the page is live) | skills.sh counts installs later | Check the badge again in a day or two |
 | L7 | `gh skill install` from GitHub | `gh` is 2.69, needs 2.90+ | Upgrade `gh` |
-| N5 | One live agent on macOS or Linux, G5 to G8 | The `CLAUDE_CODE_OAUTH_TOKEN` secret | Set the secret, run workflow `live`, then delete the secret |
 
 ## Deviations from the plan
 
