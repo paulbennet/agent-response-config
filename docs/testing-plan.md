@@ -20,12 +20,12 @@ This plan covers every feature of the `response-config` skill and every way to i
 | I. Codex, live | 0 | 8 |
 | J. Copilot CLI, live | 0 | 6 |
 | K. Copilot in VS Code, live | 0 | 4 |
-| L. Distribution | 4 | 5 |
+| L. Distribution | 5 | 8 |
 | M. Reply quality evals | 0 | 33 |
 | N. Platforms | 2 | 3 |
-| **Total** | **75** | **92** |
+| **Total** | **76** | **95** |
 
-All 75 auto cases pass. Issues found along the way are listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
+All 76 auto cases pass. Issues found along the way are listed below. Everything that touches the scripts, files and installers is checked automatically. What is left for you is what only a live agent can show: does the host fire the hooks, does the model follow the rules, and do the mod's UI pieces work.
 
 ### Why the manual cases cannot run here
 
@@ -333,6 +333,10 @@ Turn on the VS Code hooks preview setting first.
 | L7 | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` | Manual, gh 2.103.3 | Pass: `--scope project` in a fresh repo installs 1.0.0 from tag `v1.0.0`; the copy runs |
 | L8 | Claude marketplace install of the plugin, as G4 | Manual, clean `CLAUDE_CONFIG_DIR`, anonymous git | Pass: 1.0.0 installed and enabled |
 | L9 | A fresh clone passes `npm test` and `npm run test:e2e` | Manual | Pass (clone of `d2c6b51`: 66 tests; e2e 27/28, STY-2 known) |
+| L10 | Claude and Codex manifests carry the package version; each hooks file runs `hook.mjs` with its own `--agent`; both marketplaces list the plugin; no root `plugin.json` | Auto, `tests/manifests.test.mjs` | Pass |
+| L11 | `codex plugin marketplace add <local repo>`, `codex plugin add response-config@response-config`, then `codex exec --dangerously-bypass-hook-trust`: hooks run, a `codex-*.json` ledger fills | Manual, Codex CLI 0.165, clean `CODEX_HOME` | Pass: 3 hooks completed; A1, A2 open in the ledger |
+| L12 | Same from GitHub, `codex plugin marketplace add paulbennet/agent-response-config` | Manual, Codex CLI 0.165, clean `CODEX_HOME` | Pass: untrusted, no hook runs; with the bypass, 3 hooks and a ledger |
+| L13 | Interactive Codex after a plugin install: `/hooks` lists the 3 plugin hooks; after trust they run | Manual | Not run |
 
 L5 and L6 send install telemetry, which is what lists the repo on skills.sh. L5 to L8 run after the repo is made public.
 

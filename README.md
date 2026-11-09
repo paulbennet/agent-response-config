@@ -36,6 +36,7 @@ Pick one.
 | skills.sh (Claude, Codex, Copilot, many more) | `npx skills add paulbennet/agent-response-config --skill response-config` (add `-a claude-code`, `-a codex` or `-a github-copilot`, and `-g` for user-wide) |
 | GitHub CLI 2.90+ | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` |
 | Claude Code plugin (skill + hooks + output style; hooks are on once the plugin is enabled) | `/plugin install response-config --marketplace paulbennet/agent-response-config` |
+| Codex plugin (skill + hooks) | `codex plugin marketplace add paulbennet/agent-response-config`, then `codex plugin add response-config@response-config`; in Codex run `/hooks` and trust the 3 hooks, or they do not run |
 | Manual | copy `skills/response-config/` to `.claude/skills/`, `.agents/skills/` (Codex, Copilot) or `~/.copilot/skills/` |
 
 Hooks and the config CLI need Node.js 22 or newer. The skill text alone works without Node.
@@ -112,7 +113,7 @@ Or ask the agent: "set up response-config hooks for Codex".
 | Agent | Writes | Notes |
 |---|---|---|
 | Claude Code | `~/.claude/settings.json` or `.claude/settings.json` | Not needed if the plugin is installed |
-| Codex | `~/.codex/hooks.json` or `.codex/hooks.json` | Run `/hooks` and trust the 3 hooks, or they do not run |
+| Codex | `~/.codex/hooks.json` or `.codex/hooks.json` | Not needed if the Codex plugin is installed. Run `/hooks` and trust the 3 hooks, or they do not run |
 | Copilot CLI | `~/.copilot/hooks/response-config.json` or `.github/hooks/response-config.json` | Per-prompt hints use `userPromptTransformed` |
 | Copilot in VS Code | `.github/hooks/response-config.json` (`--vscode --scope project`) | VS Code hooks are a preview feature: turn on `chat.useHooks` and keep `.github/hooks` in `chat.hookFilesLocations` |
 
@@ -151,12 +152,13 @@ V2 mod work: `npm run test:mod` (engine copy check + mod tests, Claude Code 2.1.
 
 The Claude plugin's root is the repository root, so an installed copy also carries `tests/`, `tools/`, `docs/` and `mods/`. They are inert there.
 
-Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plugin/` + `hooks/` + `output-styles/` (Claude plugin), `mods/response-config-mod/` (V2 mod, not released), `tests/`, `evals/`, `docs/`.
+Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plugin/` + `hooks/hooks.json` + `output-styles/` (Claude plugin), `.codex-plugin/` + `hooks/codex-hooks.json` + `.agents/plugins/` (Codex plugin and marketplace), `mods/response-config-mod/` (V2 mod, not released), `tests/`, `evals/`, `docs/`.
 
 ## Known limits
 
 - Adherence depends on the model following instructions. There is no validator or retry.
 - Copilot only supports per-prompt hints through the `userPromptTransformed` hook, and gives the Stop hook a transcript path rather than the final message, so item tracking there is best effort.
+- The repo has no root `plugin.json` in the [Agent Plugins](https://agent-plugins.org/) format: Codex CLI 0.165 skips a plugin's hooks when one is present. The Codex plugin uses `.codex-plugin/plugin.json` instead.
 - VS Code Copilot hooks are a preview feature and need the `chat.useHooks` setting.
 - What was checked live, per agent, is in [docs/testing-plan.md](docs/testing-plan.md); reply quality is measured by `npm run evals` ([evals/README.md](evals/README.md)).
 - A terminal Claude session reads output style files at startup, so a regenerated style applies from the next session.
