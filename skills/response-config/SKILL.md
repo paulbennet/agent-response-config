@@ -27,7 +27,7 @@ node <skill-dir>/scripts/config.mjs --show
 
 `<skill-dir>` is the folder holding this file. If the command is unavailable, use these defaults: minimal on (high, 80 prose words), structured on, language off.
 
-Precedence, lowest to highest: built-in defaults, user config, project `.response-config.json`, session overrides (Claude mod only), one-turn tags.
+Precedence, lowest to highest: built-in defaults, user config, project `.response-config.json`, session overrides (`!keep`, with the hooks), one-turn tags.
 
 ## 2. Reply rules
 
@@ -126,4 +126,4 @@ node <skill-dir>/scripts/config.mjs --style activate    # sets outputStyle in se
 node <skill-dir>/scripts/config.mjs --style remove
 ```
 
-With `manage` on, every config change through the CLI, the session-start hook, or the Claude mod regenerates the file. Project scope always writes at the project root. A hand-edited style file is never overwritten; it is reported as drift until `--style sync --force`. A terminal session reads style files at startup, so a regenerated style applies from the next session.
+With `manage` on, every config change through the CLI or the session-start hook regenerates the file. Project scope always writes at the project root. A hand-edited style file is never overwritten; it is reported as drift until `--style sync --force`. A terminal session reads style files at startup, so a regenerated style applies from the next session.

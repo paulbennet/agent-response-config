@@ -7,16 +7,18 @@ What is verified, what is not, and where the build differs from [implementation-
 | Check | How |
 |---|---|
 | Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 77 tests) on Windows |
-| Mod engine copy matches the skill scripts | `node tools/sync-mod.mjs --check` (part of `npm test`) |
 | Install, plugin and setup flows end to end | `npm run test:e2e` |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |
-| Mod manifest, hooks module, state contract, behaviour | `claude plugin validate` and `claude plugin test mods/response-config-mod` (8 tests) on 2.1.310; `tsc` against its API |
-| Plugin hooks, setup hooks and the mod in live Claude Code sessions (terminal, desktop, VS Code) | [testing-plan.md](testing-plan.md) sections G and H |
+| Plugin hooks and setup hooks in live Claude Code sessions (terminal, desktop, VS Code) | [testing-plan.md](testing-plan.md) section G |
 | Codex hooks: `hooks.json` shape, trust flow, session start, per-prompt hint, Stop | Section I, Codex CLI |
 | Copilot CLI and Copilot in VS Code hooks | Sections J and K |
 | Reply quality on Claude Code, Codex and Copilot | `npm run evals` ([../evals/README.md](../evals/README.md)), section M; language levels in [language-level-tests.md](language-level-tests.md) |
 
-## Pending
+## Release scope
+
+V1 ships the skill, the hooks, the Claude plugin and the output style. The Claude mod (`mods/response-config-mod/`) is V2: its code stays in the repo, it is not listed in the marketplace, and `npm test` and `npm run validate` leave it out. Its status and plan are in [v2-mod.md](v2-mod.md).
+
+## Pending for V1
 
 Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one is done, set its Result there and remove its row here.
 
@@ -26,23 +28,22 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 | A5 | Codex lists the skill and runs `$response-config` | Live Codex session | Run in Codex CLI |
 | A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Live Copilot session | Run in Copilot CLI |
 | B10 | "Use B1 English from now on" makes the agent run `config.mjs --level B1` | Live agent session | Run with G, I or J |
-| H22 | Mod bulk select live in the terminal, desktop and VS Code | A person clicking in the UI | Run H21's steps on all three surfaces |
-| H24 | Mod level select, preset fields and wizard language steps live | A person clicking in the UI | Open `/response-config pane` and a fresh-install wizard |
 | L5 | `npx skills add paulbennet/agent-response-config` from GitHub, project and `-g` | Repo is private | Make the repo public |
 | L6 | skills.sh page and README badge appear | L5 | Run L5 first |
 | L7 | `gh skill install` from GitHub | Repo is private; `gh` is 2.69, needs 2.90+ | Make the repo public; upgrade `gh` |
-| L8 | Claude marketplace install of both plugins | Repo is private | Make the repo public |
+| L8 | Claude marketplace install of the plugin | Repo is private | Make the repo public |
 | N3 | macOS: `npm test`, `npm run test:e2e` | Only Windows here | A macOS machine |
 | N4 | Linux: the same, plus `XDG_CONFIG_HOME` | Only Windows here | A Linux machine or WSL |
 | N5 | One live agent on macOS or Linux, G5 to G8 | N3 or N4 | Run after N3 or N4 |
-| REL-1 | Release the CHANGELOG "Unreleased" entries | Not versioned yet | Bump to 0.1.3 in `package.json`, both plugin manifests and the CHANGELOG |
+| REL-1 | Release V1 with the CHANGELOG "Unreleased" entries | Version number not chosen | Bump `package.json`, `.claude-plugin/plugin.json` and the CHANGELOG |
 
 ## Deviations from the plan
 
 | Plan | Built | Why |
 |---|---|---|
-| `userConfig` options in `plugin.json`, read as `CLAUDE_PLUGIN_OPTION_*` | Not shipped; config comes from the JSON files, the CLI and the mod | The Claude Code 2.1.70 CLI on PATH rejected the key. Newer builds accept it; it can come back once older versions are not a target. |
+| `userConfig` options in `plugin.json`, read as `CLAUDE_PLUGIN_OPTION_*` | Not shipped; config comes from the JSON files and the CLI | The Claude Code 2.1.70 CLI on PATH rejected the key. Newer builds accept it; it can come back once older versions are not a target. |
 | Exec-form hook commands (`command` + `args`) | Shell form with a quoted path | Older Claude Code builds lack exec form. |
 | Claude project-scope hooks in `.claude/settings.json` | `.claude/settings.local.json` | The hook path is machine-specific and must not be committed. |
 | Automated `evals/` for `claude plugin eval` | `tools/evals.mjs`, headless runs of Claude Code, Codex and Copilot | One runner covers all three agents; `claude plugin eval` covers Claude only. |
 | Mod imports the skill's scripts | Mod ships a copy in `mods/response-config-mod/engine/` | A plugin can only import files inside its own folder. |
+| Mod released with the plugin | Mod held back to V2 | Its terminal UI does not fit an inline pane yet; see [v2-mod.md](v2-mod.md). |

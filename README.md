@@ -25,7 +25,7 @@ Resolved: ✅ A1
 
 Reply with `Q1: yes, D1: a, done A1, skip S2` (also `please do A2`, `A1 done`). IDs count up per type for the whole session. Each item starts with its status, 🔵 open or ⏳ in progress. A finished item is not listed again; the agent closes it in one line, `Resolved: ✅ A1, 💬 Q1, ⏭️ S1` (done, answered, skipped). `structured.statusEmoji=false` drops the emojis.
 
-Every part has an on/off switch. Hooks, a Claude output style and a Claude mod are optional extras.
+Every part has an on/off switch. Hooks and a Claude output style are optional extras.
 
 ## Install
 
@@ -36,10 +36,9 @@ Pick one.
 | skills.sh (Claude, Codex, Copilot, many more) | `npx skills add paulbennet/agent-response-config --skill response-config` (add `-a claude-code`, `-a codex` or `-a github-copilot`, and `-g` for user-wide) |
 | GitHub CLI 2.90+ | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` |
 | Claude Code plugin (skill + hooks + output style; hooks are on once the plugin is enabled) | `/plugin install response-config --marketplace paulbennet/agent-response-config` |
-| Claude mod (interactive panes, optional) | `/plugin install response-config-mod --marketplace paulbennet/agent-response-config` |
 | Manual | copy `skills/response-config/` to `.claude/skills/`, `.agents/skills/` (Codex, Copilot) or `~/.copilot/skills/` |
 
-Hooks, the config CLI and the mod need Node.js 22 or newer. The skill text alone works without Node.
+Hooks and the config CLI need Node.js 22 or newer. The skill text alone works without Node.
 
 ## Configure
 
@@ -69,7 +68,7 @@ node <skill-dir>/scripts/config.mjs --readability flesch-kincaid=8 --vocab ste
 
 A preset wins on the fields it sets; readability and the other fields still apply. Changing one of its fields (`--vocab`, `--set language.cefr=...`, the config pane) writes the preset's fields out and clears it, so the change takes effect.
 
-For this session only: `!level=B1 !keep` in a message (any agent with the hooks), or `/response-config level B1` with the Claude mod. `!reset` or `/response-config reset` drops it. `!keep` works for every tag: `!words=40 !keep`.
+For this session only: `!level=B1 !keep` in a message (any agent with the hooks). `!reset` drops it. `!keep` works for every tag: `!words=40 !keep`.
 
 Files, later wins per key:
 
@@ -78,7 +77,7 @@ Files, later wins per key:
 | defaults | `skills/response-config/config.default.json` |
 | user | `~/.config/response-config/config.json` (Windows: `%APPDATA%\response-config\config.json`) |
 | project | `.response-config.json` in the repo (found by walking up from the working directory; `--project` edits that file, or creates one at the git root) |
-| session | `!keep` after any tags in a message (hooks or mod); `/response-config on\|off\|verbose\|terse\|level <x>` (Claude mod); `!reset` clears |
+| session | `!keep` after any tags in a message (needs the hooks); `!reset` clears |
 | one turn | `!verbose`, `!plain`, `!level=B1` (or a preset), `!words=40`, `!off` in your message |
 
 The JSON schema is `skills/response-config/config.schema.json`; point your editor at it with `"$schema"`.
@@ -134,40 +133,31 @@ node <skill-dir>/scripts/config.mjs --set claude.outputStyle.manage=true
 node <skill-dir>/scripts/config.mjs --style status     # in-sync | stale | drifted | missing
 ```
 
-With `manage` on, `response-config-managed.md` is created in `~/.claude/output-styles/` (or `.claude/output-styles/` at the project root with `scope=project`) and regenerated whenever the config changes through the CLI, the session-start hook or the mod. A hand-edited file is never overwritten: it is reported as drift until `--style sync --force`. Switch to it with `/output-style response-config-managed` or `--style activate`.
+With `manage` on, `response-config-managed.md` is created in `~/.claude/output-styles/` (or `.claude/output-styles/` at the project root with `scope=project`) and regenerated whenever the config changes through the CLI or the session-start hook. A hand-edited file is never overwritten: it is reported as drift until `--style sync --force`. Switch to it with `/output-style response-config-managed` or `--style activate`.
 
-## Claude mod (optional)
+## Coming in V2: Claude mod
 
-The `response-config-mod` plugin adds, inside Claude Code:
-
-- `/response-config` with a first-run wizard, a config pane, an open-items pane with one-click replies and bulk select, and a status band showing the mode and open item counts;
-- rules injected into the system prompt and reloaded when a config file changes, tags and quick replies handled when you send;
-- classic hooks stand down automatically while the mod runs.
-
-The mod uses an early-access Claude Code API. It bundles a copy of the scripts under `mods/response-config-mod/engine/`; refresh it with `node tools/sync-mod.mjs`.
+`mods/response-config-mod/` holds a Claude Code mod (config pane, open-items pane, status band, setup wizard). It is not released in V1 and not listed in the marketplace; the plan is in [docs/v2-mod.md](docs/v2-mod.md).
 
 ## Develop
 
 ```
-npm test                          # mod engine copy check + node:test suite (no dependencies)
-npm run test:mod                  # mod tests on the Claude Code engine (needs a recent claude, 2.1.310 tested)
-npm run validate                  # claude plugin validate on the plugin and the mod
-node tools/sync-mod.mjs           # copy skill scripts into the mod after editing them
+npm test                          # node:test suite (no dependencies)
+npm run validate                  # claude plugin validate on the plugin
 node tools/build-output-style.mjs # regenerate output-styles/response-config.md
 ```
 
-The `claude` commands need a Claude Code build that knows `plugin test` and mods; older builds (2.1.70 was checked) reject them.
+V2 mod work: `npm run test:mod` (engine copy check + mod tests, Claude Code 2.1.310+), `npm run validate:mod`, `node tools/sync-mod.mjs` after editing the skill scripts.
 
 The Claude plugin's root is the repository root, so an installed copy also carries `tests/`, `tools/`, `docs/` and `mods/`. They are inert there.
 
-Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plugin/` + `hooks/` + `output-styles/` (Claude plugin), `mods/response-config-mod/` (mod), `tests/`, `evals/`, `docs/`.
+Layout: `skills/response-config/` (the skill, references, scripts), `.claude-plugin/` + `hooks/` + `output-styles/` (Claude plugin), `mods/response-config-mod/` (V2 mod, not released), `tests/`, `evals/`, `docs/`.
 
 ## Known limits
 
 - Adherence depends on the model following instructions. There is no validator or retry.
 - Copilot only supports per-prompt hints through the `userPromptTransformed` hook, and gives the Stop hook a transcript path rather than the final message, so item tracking there is best effort.
 - VS Code Copilot hooks are a preview feature and need the `chat.useHooks` setting.
-- In the Claude Code terminal, the mod's panes open only by command (`/response-config items`, `/response-config pane`, or `/response-config-mod ...` when the plugin is also installed); no key moves focus from the prompt into a pane.
 - What was checked live, per agent, is in [docs/testing-plan.md](docs/testing-plan.md); reply quality is measured by `npm run evals` ([evals/README.md](evals/README.md)).
 - A terminal Claude session reads output style files at startup, so a regenerated style applies from the next session.
 

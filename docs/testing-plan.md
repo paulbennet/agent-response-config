@@ -16,7 +16,7 @@ This plan covers every feature of the `response-config` skill and every way to i
 | E. Setup script | 11 | 0 |
 | F. Managed output style | 9 | 3 |
 | G. Claude Code plugin and hooks, live | 3 | 11 |
-| H. Claude mod | 9 | 15 |
+| H. Claude mod (V2, not in the V1 release) | 9 | 15 |
 | I. Codex, live | 0 | 8 |
 | J. Copilot CLI, live | 0 | 6 |
 | K. Copilot in VS Code, live | 0 | 4 |
@@ -241,7 +241,9 @@ Use Claude Code 2.1.310 or newer in a normal terminal, not inside another Claude
 6. **G10.** Quit, run `claude --resume`, pick the session and send `A2`. Pass when the agent knows what A2 is.
 7. **G12.** With both installed, check the debug log for the rules once or twice. If twice, `setup.mjs` should skip Claude when the plugin is present.
 
-## H. Claude mod
+## H. Claude mod (V2)
+
+Held back from V1: the mod is not listed in the marketplace and its open cases (H22, H24) are tracked in [v2-mod.md](v2-mod.md). The results below stand for the code as it is.
 
 Install with `/plugin install response-config-mod --marketplace paulbennet/agent-response-config`, or start with `claude --plugin-dir mods/response-config-mod`.
 
@@ -328,7 +330,7 @@ Turn on the VS Code hooks preview setting first.
 | L5 | `npx skills add paulbennet/agent-response-config --skill response-config` from GitHub, project and `-g` | Manual | Pending |
 | L6 | The skills.sh page and README badge appear after real installs | Manual | Pending |
 | L7 | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` | Manual, gh 2.90+ | Pending |
-| L8 | Claude marketplace install of both plugins, as G4 and H8 | Manual | Pending |
+| L8 | Claude marketplace install of the plugin, as G4 | Manual | Pending |
 | L9 | A fresh clone passes `npm test` and `npm run test:e2e` | Manual | Pass (clone of `d2c6b51`: 66 tests; e2e 27/28, STY-2 known) |
 
 L5 and L6 send install telemetry, which is what lists the repo on skills.sh. L5 to L8 run after the repo is made public.
@@ -473,6 +475,6 @@ Numbers are the longest sentence in words, or the measured score.
 ## Suggested order for the manual cases
 
 1. **Claude Code first:** G4 to G13, F10 to F12, then the Claude rows of M. Everything else depends on the rules reaching the model.
-2. **The mod:** H8 to H20.
+2. **The mod (V2):** H8 to H24.
 3. **Codex, then Copilot CLI, then VS Code:** these hooks are the least proven, especially I1 and K1.
 4. **Distribution from GitHub:** L5 to L8, last, because real installs count on skills.sh.

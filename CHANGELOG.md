@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The Claude mod is held back to V2. It is no longer listed in the marketplace, and `npm test` and `npm run validate` leave it out (`npm run test:mod` and `npm run validate:mod` still run it). The code stays in `mods/response-config-mod/`; the plan is in [docs/v2-mod.md](docs/v2-mod.md).
 - The per-prompt hint spells out the LANGUAGE block. A level set with `!level=` or kept with `!keep` used to reach the model only as its name, with no sentence limit (EVAL-7).
 - A1, A2 and B1 sentence limits are called a hard cap: count each sentence's words before sending.
 - Plain language asks for "you" ("you can", "your files"), never impersonal terms (EVAL-8).
