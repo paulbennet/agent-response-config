@@ -27,7 +27,7 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 |---|---|---|---|
 | L6 | README badge shows the install count (the page is live) | skills.sh counts installs later | Check the badge again in a day or two |
 | L7 | `gh skill install` from GitHub | `gh` is 2.69, needs 2.90+ | Upgrade `gh` |
-| N5 | One live agent on macOS or Linux, G5 to G8 | Only Windows here | A macOS or Linux machine |
+| N5 | One live agent on macOS or Linux, G5 to G8 | The `CLAUDE_CODE_OAUTH_TOKEN` secret | Set the secret, run workflow `live`, then delete the secret |
 
 ## Deviations from the plan
 

@@ -471,7 +471,7 @@ Numbers are the longest sentence in words, or the measured score.
 | N2 | Windows: PowerShell forms of the Copilot commands | Auto, e2e | Pass |
 | N3 | macOS: `npm test`, `npm run test:e2e` | Auto, CI `macos-latest` | Pass |
 | N4 | Linux: the same, and `~/.config/response-config` or `XDG_CONFIG_HOME` is used | Auto, CI `ubuntu-latest` | Pass |
-| N5 | One live agent on macOS or Linux, with G5 to G8 | Manual | Pending |
+| N5 | One live agent on macOS or Linux, with G5 to G8 | Workflow `live` (manual start, needs the `CLAUDE_CODE_OAUTH_TOKEN` secret); `node tools/live-ci.mjs` runs it locally | Pending |
 
 ## Suggested order for the manual cases
 
