@@ -8,6 +8,7 @@ What is verified, what is not, and where the build differs from [implementation-
 |---|---|
 | Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 77 tests) on Windows |
 | Install, plugin and setup flows end to end | `npm run test:e2e` |
+| `npm test` and e2e on Linux (with `XDG_CONFIG_HOME`), macOS and Windows | GitHub Actions, `.github/workflows/test.yml` (N3, N4) |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |
 | Plugin hooks and setup hooks in live Claude Code sessions (terminal, desktop, VS Code) | [testing-plan.md](testing-plan.md) section G |
 | Codex hooks: `hooks.json` shape, trust flow, session start, per-prompt hint, Stop | Section I, Codex CLI |
@@ -33,9 +34,7 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 | L6 | skills.sh page and README badge appear | L5 | Run L5 first |
 | L7 | `gh skill install` from GitHub | Repo is private; `gh` is 2.69, needs 2.90+ | Make the repo public; upgrade `gh` |
 | L8 | Claude marketplace install of the plugin | Repo is private | Make the repo public |
-| N3 | macOS: `npm test`, `npm run test:e2e` | Only Windows here | A macOS machine |
-| N4 | Linux: the same, plus `XDG_CONFIG_HOME` | Only Windows here | A Linux machine or WSL |
-| N5 | One live agent on macOS or Linux, G5 to G8 | N3 or N4 | Run after N3 or N4 |
+| N5 | One live agent on macOS or Linux, G5 to G8 | Only Windows here | A macOS or Linux machine |
 
 ## Deviations from the plan
 
