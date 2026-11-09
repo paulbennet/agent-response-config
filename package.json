@@ -1,6 +1,6 @@
 {
   "name": "response-config",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Agent skill + hooks: minimal, structured, level-controlled responses for Claude Code, Codex and GitHub Copilot",
   "type": "module",
   "license": "MIT",

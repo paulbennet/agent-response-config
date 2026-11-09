@@ -4,7 +4,7 @@ description: Makes agent replies short, structured and easy to act on. Use when 
 license: MIT
 compatibility: Works in Claude Code, Codex CLI and GitHub Copilot (CLI, VS Code). Hooks and the config CLI need Node.js 22 or newer.
 metadata:
-  version: "0.1.2"
+  version: "1.0.0"
 ---
 
 # response-config

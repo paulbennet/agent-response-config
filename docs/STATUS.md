@@ -35,7 +35,6 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 | N3 | macOS: `npm test`, `npm run test:e2e` | Only Windows here | A macOS machine |
 | N4 | Linux: the same, plus `XDG_CONFIG_HOME` | Only Windows here | A Linux machine or WSL |
 | N5 | One live agent on macOS or Linux, G5 to G8 | N3 or N4 | Run after N3 or N4 |
-| REL-1 | Release V1 with the CHANGELOG "Unreleased" entries | Version number not chosen | Bump `package.json`, `.claude-plugin/plugin.json` and the CHANGELOG |
 
 ## Deviations from the plan
 
