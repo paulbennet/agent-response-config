@@ -101,9 +101,9 @@ Last run: 2026-10-25, Windows 11, Node 22.23.4, Claude Code 2.1.310.
 | A1 | Frontmatter: `name` matches the folder and the kebab-case rule, `description` under 1024 characters, body under 500 lines, links to `references/` resolve | Auto, e2e SPEC-1 | Pass |
 | A2 | Codex metadata `agents/openai.yaml` has the expected keys and names the skill | Auto, e2e SPEC-2 | Pass |
 | A3 | Shipped files present after install: SKILL.md, scripts, references, defaults | Auto, e2e INST-* | Pass |
-| A4 | Claude Code loads the skill when you ask for terse replies or a CEFR level, without naming it | Manual | Pending |
-| A5 | Codex lists the skill and runs it with `$response-config` | Manual | Pending |
-| A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Manual | Pending |
+| A4 | Claude Code loads the skill when you ask for terse replies or a CEFR level, without naming it | Manual, `claude -p` 2.1.319, plugin off, project skill | Pass: 3 of 4 phrasings load it; "keep answers very short ... What does git stash do?" answered without it |
+| A5 | Codex lists the skill and runs it with `$response-config` | Manual, `codex exec` 0.165.0, project `.agents/skills` | Pass |
+| A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Manual, `copilot -p` 1.0.107, each folder alone | Pass |
 
 **A4 to A6 steps.** Install the skill only, no hooks. Start a session and type "keep your answers really short and give me numbered next steps". Pass when the agent loads the skill and the reply has a short summary plus `Actions` items.
 
@@ -120,11 +120,11 @@ Last run: 2026-10-25, Windows 11, Node 22.23.4, Claude Code 2.1.310.
 | B7 | `--show --json` lists the watched files with their times | Auto, `npm test` | Pass |
 | B8 | `--ledger path` and `--ledger clear` | Auto, e2e CFG-3 | Pass |
 | B9 | Config folder order: `RC_CONFIG_DIR`, `XDG_CONFIG_HOME`, then `%APPDATA%\response-config` on Windows | Auto, e2e CFG-4 | Pass |
-| B10 | Ask the agent "use B1 English from now on"; it runs `config.mjs --level B1` and says what changed | Manual, with G, I or J | Pending |
+| B10 | Ask the agent "use B1 English from now on"; it runs `config.mjs --level B1` and says what changed | Manual, `claude -p` 2.1.319 | Pass |
 | B11 | `--level`, `--vocab` and `--readability` set the language block in one step; bad values are refused | Auto, `npm test` | Pass |
 | B12 | A preset wins on its fields; changing one writes the preset out and clears it | Auto, `npm test` | Pass |
 | B13 | `!level=<x> !keep` reaches later prompts through the hooks until `!reset` | Auto, `npm test` | Pass |
-| B14 | Ask "configure response-config"; the agent shows the settings in effect, asks one group at a time with lettered options, asks user or project, runs `config.mjs` and reports old → new | Manual, with G, I or J | Pending |
+| B14 | Ask "configure response-config"; the agent shows the settings in effect, asks one group at a time with lettered options, asks user or project, runs `config.mjs` and reports old → new | Manual, `claude -p` 2.1.319, two turns | Pass |
 
 ## C. Item parsing and ledger
 
