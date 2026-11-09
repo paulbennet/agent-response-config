@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // End-to-end checks that run on this machine without a live agent (see docs/testing-plan.md).
-// Needs Node 22, bash and npx on PATH; PowerShell for the Copilot powershell forms; network for npx skills.
+// Needs Node 22, bash and npx on PATH; PowerShell (powershell on Windows, pwsh elsewhere) for the Copilot powershell forms; network for npx skills.
 // Every write goes into a throwaway folder; the real home is never touched.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -42,7 +42,7 @@ function sandbox() {
 }
 const node = (args, opts) => spawnSync(process.execPath, args, { encoding: 'utf8', ...opts });
 const sh = (cmd, input, opts) => spawnSync('bash', ['-c', cmd], { encoding: 'utf8', input, ...opts });
-const ps = (cmd, input, opts) => spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', cmd], { encoding: 'utf8', input, ...opts });
+const ps = (cmd, input, opts) => spawnSync(process.platform === 'win32' ? 'powershell' : 'pwsh', ['-NoProfile', '-NonInteractive', '-Command', cmd], { encoding: 'utf8', input, ...opts });
 const readJ = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
 
 // Payloads the hosts send, as documented.
