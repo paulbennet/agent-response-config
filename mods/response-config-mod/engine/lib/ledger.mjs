@@ -97,15 +97,20 @@ function pruneDir(dir, maxAgeMs) {
 // It expires after a day so a session resumed without the mod gets its hooks back; the mod
 // rewrites it at session start and then at most every hour while prompts arrive.
 
+// The marker carries the format version of the mod's parser. A mod whose bundled scripts are
+// older (no `v`, or a lower one) cannot read the current reply format, so the hooks keep running
+// rather than leave the session to it. Raise MARKER_VERSION when the item format changes.
+const MARKER_VERSION = 2;
+
 const modDir = (env) => path.join(configDir(env), 'mod-active');
 
 export function isModActive(sessionId, env = process.env) {
   const data = readJson(path.join(modDir(env), `${safe(sessionId)}.json`));
-  return Boolean(data && Date.now() - data.ts < 24 * 3600 * 1000);
+  return Boolean(data && Date.now() - data.ts < 24 * 3600 * 1000 && Number(data.v) >= MARKER_VERSION);
 }
 
 export function markModActive(sessionId, env = process.env) {
-  writeJsonAtomic(path.join(modDir(env), `${safe(sessionId)}.json`), { ts: Date.now() });
+  writeJsonAtomic(path.join(modDir(env), `${safe(sessionId)}.json`), { ts: Date.now(), v: MARKER_VERSION });
 }
 
 export function pruneOld(days = 30, env = process.env) {

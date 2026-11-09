@@ -149,6 +149,14 @@ test('hooks stand down when the mod marked the session active', () => {
   assert.equal(run({ agent: 'claude', event: 'prompt', input: { session_id: 's', cwd: e.dir, prompt: 'hi' }, env: e }), '');
 });
 
+test('a marker from an older mod (no format version) does not stand the hooks down', () => {
+  const e = env();
+  const dir = path.join(e.RC_CONFIG_DIR, 'mod-active');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 's.json'), JSON.stringify({ ts: Date.now() }));
+  assert.notEqual(run({ agent: 'claude', event: 'session-start', input: { session_id: 's', cwd: e.dir, source: 'startup' }, env: e }), '');
+});
+
 test('project config overrides user config per key; invalid layers are skipped with a problem', () => {
   const e = env();
   fs.mkdirSync(e.RC_CONFIG_DIR, { recursive: true });
