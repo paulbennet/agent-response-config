@@ -22,11 +22,10 @@ V1 (1.0.0, released 2026-11-09: [v1.0.0](https://github.com/paulbennet/agent-res
 
 ## Pending for V1
 
-Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one is done, set its Result there and remove its row here.
+None. Every V1 case passes. When a new case opens, add a row here by its ID in [testing-plan.md](testing-plan.md).
 
 | ID | What | Blocked by | To unblock |
 |---|---|---|---|
-| L6 | README badge shows the install count (the page is live) | skills.sh counts installs later | Check the badge again in a day or two |
 
 ## Deviations from the plan
 
