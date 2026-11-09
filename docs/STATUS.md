@@ -6,7 +6,7 @@ What is verified, what is not, and where the build differs from [implementation-
 
 | Check | How |
 |---|---|
-| Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 77 tests) on Windows |
+| Hook script, config CLI, setup script, output-style sync | `npm test` (node:test, 78 tests) |
 | Install, plugin and setup flows end to end | `npm run test:e2e` |
 | `npm test` and e2e on Linux (with `XDG_CONFIG_HOME`), macOS and Windows | GitHub Actions, `.github/workflows/test.yml` (N3, N4) |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |
