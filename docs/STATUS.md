@@ -27,7 +27,6 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 | ID | What | Blocked by | To unblock |
 |---|---|---|---|
 | L6 | README badge shows the install count (the page is live) | skills.sh counts installs later | Check the badge again in a day or two |
-| L7 | `gh skill install` from GitHub | `gh` is 2.69, needs 2.90+ | Upgrade `gh` |
 
 ## Deviations from the plan
 
