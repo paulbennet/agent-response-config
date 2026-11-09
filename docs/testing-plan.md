@@ -124,6 +124,7 @@ Last run: 2026-10-25, Windows 11, Node 22.23.4, Claude Code 2.1.310.
 | B11 | `--level`, `--vocab` and `--readability` set the language block in one step; bad values are refused | Auto, `npm test` | Pass |
 | B12 | A preset wins on its fields; changing one writes the preset out and clears it | Auto, `npm test` | Pass |
 | B13 | `!level=<x> !keep` reaches later prompts through the hooks until `!reset` | Auto, `npm test` | Pass |
+| B14 | Ask "configure response-config"; the agent shows the settings in effect, asks one group at a time with lettered options, asks user or project, runs `config.mjs` and reports old → new | Manual, with G, I or J | Pending |
 
 ## C. Item parsing and ledger
 

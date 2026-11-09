@@ -2,6 +2,7 @@
 
 ## 1.0.0
 
+- Guided configuration: "configure response-config" makes the agent show the settings in effect, then ask one group at a time with lettered options and save with `config.mjs` ([references/configure.md](skills/response-config/references/configure.md)). It replaces the mod's config pane in V1.
 - The hooks stand down only for a mod marker that carries the current format version. A cached 0.1.0 mod, whose parser predates the status emojis, kept the hooks silent and tracked no items, so every prompt said `Next IDs: A1 S1 Q1 D1` (HOOK-4).
 - The Claude mod is held back to V2. It is no longer listed in the marketplace, and `npm test` and `npm run validate` leave it out (`npm run test:mod` and `npm run validate:mod` still run it). The code stays in `mods/response-config-mod/`; the plan is in [docs/v2-mod.md](docs/v2-mod.md).
 - The per-prompt hint spells out the LANGUAGE block. A level set with `!level=` or kept with `!keep` used to reach the model only as its name, with no sentence limit (EVAL-7).

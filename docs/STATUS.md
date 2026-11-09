@@ -28,6 +28,7 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 | A5 | Codex lists the skill and runs `$response-config` | Live Codex session | Run in Codex CLI |
 | A6 | Copilot lists the skill from `.agents/skills` and `~/.copilot/skills` | Live Copilot session | Run in Copilot CLI |
 | B10 | "Use B1 English from now on" makes the agent run `config.mjs --level B1` | Live agent session | Run with G, I or J |
+| B14 | "Configure response-config" runs the guided settings flow | Live agent session | Run with G, I or J |
 | L5 | `npx skills add paulbennet/agent-response-config` from GitHub, project and `-g` | Repo is private | Make the repo public |
 | L6 | skills.sh page and README badge appear | L5 | Run L5 first |
 | L7 | `gh skill install` from GitHub | Repo is private; `gh` is 2.69, needs 2.90+ | Make the repo public; upgrade `gh` |

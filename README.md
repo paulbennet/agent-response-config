@@ -42,7 +42,7 @@ Hooks and the config CLI need Node.js 22 or newer. The skill text alone works wi
 
 ## Configure
 
-Ask the agent ("make replies terser", "use B1 English") or run the CLI:
+Ask the agent ("make replies terser", "use B1 English"), say "configure response-config" for a guided menu that goes through each setting, or run the CLI:
 
 ```
 node <skill-dir>/scripts/config.mjs --show

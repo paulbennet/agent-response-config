@@ -1,6 +1,6 @@
 ---
 name: response-config
-description: Makes agent replies short, structured and easy to act on. Use when the user wants terse or minimal responses, numbered next actions, suggestions, questions and decisions they can answer by ID (A1, S2, Q3, D4), replies at a chosen English level (CEFR, readability score, controlled vocabulary, plain language), or wants to configure, install or manage the hooks and Claude output style that enforce this.
+description: Makes agent replies short, structured and easy to act on. Use when the user wants terse or minimal responses, numbered next actions, suggestions, questions and decisions they can answer by ID (A1, S2, Q3, D4), replies at a chosen English level (CEFR, readability score, controlled vocabulary, plain language), or wants to configure or review these settings, install or manage the hooks and Claude output style that enforce this.
 license: MIT
 compatibility: Works in Claude Code, Codex CLI and GitHub Copilot (CLI, VS Code). Hooks and the config CLI need Node.js 22 or newer.
 metadata:
@@ -91,6 +91,8 @@ node <skill-dir>/scripts/config.mjs --set minimal.maxWords=60 --project
 ```
 
 For the English level use `--level` with a CEFR level, `plain`, a preset (`simple`, `global`, `technical`) or `off`; `--readability <standard>=<target>|off` and `--vocab <list>|off` set the others. Each switches language on, and a change under a preset keeps the preset's other fields. If the user wants a level only for now, suggest `!level=B1 !keep` (or `/response-config level B1` with the Claude mod) instead of saving it.
+
+If the user asks to configure or review the settings without naming one, follow the guided flow in [references/configure.md](references/configure.md): show the settings in effect, then ask one group at a time with lettered options.
 
 `--project` writes the project's `.response-config.json` (the one in effect, else a new one at the git root; shared with the repo); the default writes the user file. Keys are in [config.schema.json](config.schema.json). Tell the user what changed.
 
