@@ -340,7 +340,7 @@ Turn on the VS Code hooks preview setting first.
 
 L5 and L6 send install telemetry, which is what lists the repo on skills.sh. L5 to L8 run after the repo is made public.
 
-Before publishing, 2026-10-26: the full history has no tokens, keys or passwords; the only machine path is a quoted example in `docs/review-0.1.0.md`; every commit carries the author email.
+Before publishing, 2026-10-26: the full history has no tokens, keys or passwords; the only machine path is a quoted example in `docs/review-0.1.0.md`; every commit carries the author email. On 2026-11-09 the history was rewritten: every commit and tag now carries the GitHub noreply address, and the machine path is gone.
 
 ## M. Reply quality evals
 
