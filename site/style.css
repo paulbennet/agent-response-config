@@ -130,6 +130,8 @@ th { color: var(--muted); font-weight: 600; }
 .compare > div:first-child pre { border-top: 3px solid var(--before); }
 .compare > div:last-child pre { border-top: 3px solid var(--after); }
 
+.discuss { margin-top: 2.5rem; padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+
 .posts { list-style: none; padding: 0; }
 .posts li { padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
 .posts a { font-weight: 600; font-size: 1.1rem; }

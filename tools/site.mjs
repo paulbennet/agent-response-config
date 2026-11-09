@@ -2,6 +2,7 @@
 // Builds the GitHub Pages site: site/index.md (landing) and docs/blog/*.md (posts) into _site/.
 //   node tools/site.mjs [--out <dir>] [--base <url>]
 // Each Markdown file starts with front matter: title, description, and for posts a date (YYYY-MM-DD).
+// A post can add devto: and x: URLs; they show as "Discuss" links at the end of the post.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,6 +69,9 @@ for (const p of posts) {
   const metaLine = `<p class="meta"><time datetime="${p.date}">${longDate(p.date)}</time> · ${minutes(p.body)} min read</p>`;
   let html = marked.parse(p.body);
   html = /<\/h1>/.test(html) ? html.replace('</h1>', `</h1>\n${metaLine}`) : `<h1>${esc(p.title)}</h1>\n${metaLine}\n${html}`;
+  const discuss = [['devto', 'dev.to'], ['x', 'X']].filter(([k]) => /^https:\/\//.test(p[k] || ''))
+    .map(([k, label]) => `<a href="${esc(p[k])}">${label}</a>`);
+  if (discuss.length) html += `<p class="discuss">Discuss this post on ${discuss.join(' or ')}.</p>\n`;
   page({ title: p.title, pageTitle: `${p.title} · response-config`, description: p.description, rel: p.rel, content: `<article>\n${html}</article>`, kind: 'post' });
 }
 
