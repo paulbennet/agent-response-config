@@ -24,9 +24,6 @@ V1 (1.0.0, released 2026-11-09: [v1.0.0](https://github.com/paulbennet/agent-res
 
 None. Every V1 case passes. When a new case opens, add a row here by its ID in [testing-plan.md](testing-plan.md).
 
-| ID | What | Blocked by | To unblock |
-|---|---|---|---|
-
 ## Deviations from the plan
 
 | Plan | Built | Why |
