@@ -5,3 +5,4 @@ mods/*/.claude-plugin/types/
 .DS_Store
 evals/results/
 mods/*/tsconfig.json
+_site/

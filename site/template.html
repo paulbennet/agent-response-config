@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{pageTitle}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:type" content="{{ogType}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{canonical}}">
+<link rel="alternate" type="application/rss+xml" title="response-config blog" href="{{root}}feed.xml">
+<link rel="stylesheet" href="{{root}}style.css">
+</head>
+<body>
+<header class="site">
+  <a class="brand" href="{{root}}">response-config</a>
+  <nav>
+    <a href="{{root}}blog/">Blog</a>
+    <a href="https://github.com/paulbennet/agent-response-config">GitHub</a>
+  </nav>
+</header>
+<main class="{{kind}}">
+{{content}}
+</main>
+<footer class="site">
+  <p>MIT licensed · <a href="https://github.com/paulbennet/agent-response-config">Source</a> · <a href="https://github.com/paulbennet/agent-response-config/issues">Issues</a> · <a href="{{root}}feed.xml">RSS</a></p>
+</footer>
+</body>
+</html>

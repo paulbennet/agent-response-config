@@ -2,6 +2,8 @@
 
 An agent skill that makes replies **short**, **structured** and **easy to answer**, with an optional **English level**. Works in Claude Code, Codex and GitHub Copilot.
 
+Site and blog: [paulbennet.github.io/agent-response-config](https://paulbennet.github.io/agent-response-config/) ([Stop scrolling agent replies](https://paulbennet.github.io/agent-response-config/blog/stop-scrolling-agent-replies/)).
+
 [![skills.sh](https://skills.sh/b/paulbennet/agent-response-config)](https://skills.sh/paulbennet/agent-response-config)
 
 ## What you get
