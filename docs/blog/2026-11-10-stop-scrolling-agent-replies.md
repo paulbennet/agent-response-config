@@ -2,6 +2,7 @@
 title: Stop scrolling agent replies
 date: 2026-11-10
 devto: https://dev.to/paulbennetjoshua/stop-scrolling-agent-replies-1o17
+x: https://x.com/paulbennet89/status/2119915541226000495
 description: A skill for Claude Code, Codex and Copilot that makes agent replies short, gives every next step an ID you can answer, and sets the English level you want.
 ---
 
