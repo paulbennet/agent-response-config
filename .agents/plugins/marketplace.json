@@ -1,0 +1,20 @@
+{
+  "name": "response-config",
+  "interface": {
+    "displayName": "response-config"
+  },
+  "plugins": [
+    {
+      "name": "response-config",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

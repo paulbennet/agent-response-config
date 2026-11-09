@@ -1,0 +1,39 @@
+{
+  "description": "response-config for Codex: rules at session start and on each prompt, item ledger on stop",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent codex --event session-start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent codex --event prompt",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT}/skills/response-config/scripts/hook.mjs\" --agent codex --event stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

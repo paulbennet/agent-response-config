@@ -1,0 +1,22 @@
+{
+  "name": "response-config",
+  "version": "1.0.0",
+  "description": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items you answer by ID. Ships the skill and hooks that keep the item ledger.",
+  "author": {
+    "name": "Paul Bennet Joshua",
+    "url": "https://github.com/paulbennet"
+  },
+  "homepage": "https://github.com/paulbennet/agent-response-config",
+  "repository": "https://github.com/paulbennet/agent-response-config",
+  "license": "MIT",
+  "keywords": ["concise", "structured", "readability", "cefr", "hooks"],
+  "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "response-config",
+    "shortDescription": "Short, structured replies with A/S/Q/D items you answer by ID",
+    "developerName": "Paul Bennet Joshua",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/paulbennet/agent-response-config"
+  }
+}
