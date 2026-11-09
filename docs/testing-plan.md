@@ -328,10 +328,10 @@ Turn on the VS Code hooks preview setting first.
 | L2 | Same for codex | Auto, e2e | Pass |
 | L3 | Same for github-copilot | Auto, e2e | Pass |
 | L4 | The installed copy runs | Auto, e2e | Pass |
-| L5 | `npx skills add paulbennet/agent-response-config --skill response-config` from GitHub, project and `-g` | Manual | Pending |
-| L6 | The skills.sh page and README badge appear after real installs | Manual | Pending |
+| L5 | `npx skills add paulbennet/agent-response-config --skill response-config` from GitHub, project and `-g` | Manual, skills CLI, anonymous git | Pass: project (claude-code, codex, github-copilot) and `-g` |
+| L6 | The skills.sh page and README badge appear after real installs | Manual | Partial: page and skill page live; badge says "resource not found" until installs are counted |
 | L7 | `gh skill install paulbennet/agent-response-config response-config --agent claude-code --scope user` | Manual, gh 2.90+ | Pending |
-| L8 | Claude marketplace install of the plugin, as G4 | Manual | Pending |
+| L8 | Claude marketplace install of the plugin, as G4 | Manual, clean `CLAUDE_CONFIG_DIR`, anonymous git | Pass: 1.0.0 installed and enabled |
 | L9 | A fresh clone passes `npm test` and `npm run test:e2e` | Manual | Pass (clone of `d2c6b51`: 66 tests; e2e 27/28, STY-2 known) |
 
 L5 and L6 send install telemetry, which is what lists the repo on skills.sh. L5 to L8 run after the repo is made public.

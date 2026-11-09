@@ -25,10 +25,8 @@ Every open item, by its case ID in [testing-plan.md](testing-plan.md). When one 
 
 | ID | What | Blocked by | To unblock |
 |---|---|---|---|
-| L5 | `npx skills add paulbennet/agent-response-config` from GitHub, project and `-g` | Repo is private | Make the repo public |
-| L6 | skills.sh page and README badge appear | L5 | Run L5 first |
-| L7 | `gh skill install` from GitHub | Repo is private; `gh` is 2.69, needs 2.90+ | Make the repo public; upgrade `gh` |
-| L8 | Claude marketplace install of the plugin | Repo is private | Make the repo public |
+| L6 | README badge shows the install count (the page is live) | skills.sh counts installs later | Check the badge again in a day or two |
+| L7 | `gh skill install` from GitHub | `gh` is 2.69, needs 2.90+ | Upgrade `gh` |
 | N5 | One live agent on macOS or Linux, G5 to G8 | Only Windows here | A macOS or Linux machine |
 
 ## Deviations from the plan
