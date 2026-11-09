@@ -6,3 +6,4 @@ mods/*/.claude-plugin/types/
 evals/results/
 mods/*/tsconfig.json
 _site/
+.playwright-cli
