@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 - Codex plugin: `codex plugin marketplace add paulbennet/agent-response-config`, then `codex plugin add response-config@response-config`, installs the skill and the hooks (`.codex-plugin/plugin.json`, `hooks/codex-hooks.json`, `.agents/plugins/marketplace.json`). Trust the hooks once with `/hooks`. There is no root `plugin.json` in the Agent Plugins format, because Codex CLI 0.165 then skips the plugin's hooks.
 - `tests/manifests.test.mjs` keeps the package, skill, Claude and Codex versions in sync and checks both hooks files.

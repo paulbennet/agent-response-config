@@ -1,6 +1,6 @@
 {
   "name": "response-config",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items you answer by ID. Ships the skill and hooks that keep the item ledger.",
   "author": {
     "name": "Paul Bennet Joshua",
