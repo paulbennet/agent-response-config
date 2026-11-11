@@ -9,14 +9,32 @@
   "homepage": "https://github.com/paulbennet/agent-response-config",
   "repository": "https://github.com/paulbennet/agent-response-config",
   "license": "MIT",
-  "keywords": ["concise", "structured", "readability", "cefr", "hooks"],
+  "keywords": [
+    "concise",
+    "structured",
+    "readability",
+    "cefr",
+    "hooks"
+  ],
   "skills": "./skills/",
   "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "response-config",
-    "shortDescription": "Short, structured replies with A/S/Q/D items you answer by ID",
+    "shortDescription": "Short replies you answer by ID",
     "developerName": "Paul Bennet Joshua",
     "category": "Productivity",
-    "websiteURL": "https://github.com/paulbennet/agent-response-config"
+    "websiteURL": "https://github.com/paulbennet/agent-response-config",
+    "longDescription": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items you answer by ID. Ships the skill and hooks that keep the item ledger.",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png",
+    "brandColor": "#14213D",
+    "defaultPrompt": [
+      "Keep your replies short and give me numbered actions",
+      "Set my reply English level to B1"
+    ]
   }
 }

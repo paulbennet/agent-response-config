@@ -7,3 +7,4 @@ evals/results/
 mods/*/tsconfig.json
 _site/
 .playwright-cli
+dist/

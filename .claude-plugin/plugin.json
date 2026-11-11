@@ -5,6 +5,7 @@
   "author": {
     "name": "Paul Bennet Joshua"
   },
+  "homepage": "https://paulbennet.github.io/agent-response-config/",
   "repository": "https://github.com/paulbennet/agent-response-config",
   "license": "MIT",
   "keywords": [
@@ -15,6 +16,7 @@
     "output-style",
     "hooks"
   ],
+  "icon": "./assets/icon.png",
   "hooks": "./hooks/hooks.json",
   "outputStyles": "./output-styles/"
 }

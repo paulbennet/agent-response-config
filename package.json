@@ -15,7 +15,8 @@
     "test:e2e": "node tools/e2e.mjs",
     "evals": "node tools/evals.mjs",
     "validate:mod": "claude plugin validate mods/response-config-mod",
-    "site": "node tools/site.mjs"
+    "site": "node tools/site.mjs",
+    "package:codex": "node tools/codex-package.mjs"
   },
   "devDependencies": {
     "marked": "18.1.2"
