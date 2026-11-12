@@ -17,6 +17,5 @@
     "hooks"
   ],
   "icon": "./assets/icon.png",
-  "hooks": "./hooks/hooks.json",
   "outputStyles": "./output-styles/"
 }

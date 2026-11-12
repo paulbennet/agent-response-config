@@ -26,7 +26,8 @@ for (const [manifest, agent, rootVar] of [
   ['.codex-plugin/plugin.json', 'codex', '${PLUGIN_ROOT}'],
 ]) {
   test(`${manifest} hooks run hook.mjs with --agent ${agent}`, () => {
-    const hooksFile = json(manifest).hooks;
+    // Claude Code always loads hooks/hooks.json; naming it in plugin.json is a duplicate.
+    const hooksFile = agent === 'claude' ? (assert.equal(json(manifest).hooks, undefined), 'hooks/hooks.json') : json(manifest).hooks;
     assert.ok(hooksFile && exists(hooksFile), `${manifest} names a hooks file that exists`);
     const events = {};
     for (const [event, groups] of Object.entries(json(hooksFile).hooks)) {
