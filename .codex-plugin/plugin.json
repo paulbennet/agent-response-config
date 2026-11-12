@@ -23,7 +23,7 @@
     "shortDescription": "Short replies you answer by ID",
     "developerName": "Paul Bennet Joshua",
     "category": "Productivity",
-    "websiteURL": "https://github.com/paulbennet/agent-response-config",
+    "websiteURL": "https://paulbennet.github.io/agent-response-config/",
     "longDescription": "Minimal, structured, level-controlled agent replies with numbered A/S/Q/D items you answer by ID. Ships the skill and hooks that keep the item ledger.",
     "capabilities": [
       "Interactive",
@@ -35,6 +35,9 @@
     "defaultPrompt": [
       "Keep your replies short and give me numbered actions",
       "Set my reply English level to B1"
-    ]
+    ],
+    "supportURL": "https://github.com/paulbennet/agent-response-config/issues",
+    "privacyPolicyURL": "https://paulbennet.github.io/agent-response-config/privacy/",
+    "termsOfServiceURL": "https://paulbennet.github.io/agent-response-config/terms/"
   }
 }

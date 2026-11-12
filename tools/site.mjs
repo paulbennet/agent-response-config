@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Builds the GitHub Pages site: site/index.md (landing) and docs/blog/*.md (posts) into _site/.
+// Builds the GitHub Pages site: site/index.md (landing), other site/*.md pages (site/<name>.md -> <name>/)
+// and docs/blog/*.md (posts) into _site/.
 //   node tools/site.mjs [--out <dir>] [--base <url>]
 // Each Markdown file starts with front matter: title, description, and for posts a date (YYYY-MM-DD).
 // A post can add devto: and x: URLs; they show as "Discuss" links at the end of the post.
@@ -83,6 +84,13 @@ page({ title: 'Blog', pageTitle: 'Blog · response-config', description: 'Posts 
 const home = read(path.join(root, 'site/index.md'));
 page({ title: home.meta.title, description: home.meta.description, rel: 'index.html',
   content: marked.parse(home.body).replace(/<p>\{\{posts\}\}<\/p>|\{\{posts\}\}/, list('blog/')), kind: 'home' });
+
+for (const f of fs.readdirSync(path.join(root, 'site')).filter((f) => f.endsWith('.md') && f !== 'index.md')) {
+  const { meta, body } = read(path.join(root, 'site', f));
+  page({ title: meta.title, pageTitle: `${meta.title} · response-config`, description: meta.description,
+    rel: `${f.replace(/.md$/, '')}/index.html`, content: `<article>
+${marked.parse(body)}</article>`, kind: 'post' });
+}
 
 fs.copyFileSync(path.join(root, 'site/style.css'), path.join(out, 'style.css'));
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
