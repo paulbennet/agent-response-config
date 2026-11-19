@@ -20,7 +20,7 @@ What is verified, what is not, and where the build differs from [implementation-
 
 ## Release scope
 
-V1 (1.0.0, released 2026-11-09: [v1.0.0](https://github.com/paulbennet/agent-response-config/releases/tag/v1.0.0)) ships the skill, the hooks, the Claude plugin and the output style. 1.1.0 ([v1.1.0](https://github.com/paulbennet/agent-response-config/releases/tag/v1.1.0)) adds the Codex plugin. The Claude mod (`mods/response-config-mod/`) is V2: its code stays in the repo, it is not listed in the marketplace, and `npm test` and `npm run validate` leave it out. Its status and plan are in [v2-mod.md](v2-mod.md).
+V1 (1.0.0, released 2026-11-09: [v1.0.0](https://github.com/paulbennet/agent-response-config/releases/tag/v1.0.0)) ships the skill, the hooks, the Claude plugin and the output style. 1.1.0 ([v1.1.0](https://github.com/paulbennet/agent-response-config/releases/tag/v1.1.0)) adds the Codex plugin. 1.2.0 ([v1.2.0](https://github.com/paulbennet/agent-response-config/releases/tag/v1.2.0)) adds the Claude plugin directory edition. The Claude mod (`mods/response-config-mod/`) is V2: its code stays in the repo, it is not listed in the marketplace, and `npm test` and `npm run validate` leave it out. Its status and plan are in [v2-mod.md](v2-mod.md).
 
 ## Pending
 

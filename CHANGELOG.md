@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- Claude plugin directory edition on the `directory` branch: the skill and the output style, with no hooks, scripts or `package.json`, because the directory refuses those from organizations that are not Verified. Settings are the same JSON files, which Claude reads and edits itself. `tools/directory-build.mjs` builds it from main, and the `directory` workflow pushes it on each `v*` tag. `tests/directory.test.mjs` checks the file types.
+- Plugin icon (`assets/icon.png`) and listing fields in both manifests. The Claude manifest no longer names `hooks/hooks.json`, which Claude Code loads by default.
+- `npm run package:codex` builds a skills-only zip for the OpenAI plugin portal (`tools/codex-package.mjs`).
+- Site: privacy and terms pages; `tools/site.mjs` builds any `site/<name>.md` into `<name>/`.
+
 ## 1.1.0
 
 - Codex plugin: `codex plugin marketplace add paulbennet/agent-response-config`, then `codex plugin add response-config@response-config`, installs the skill and the hooks (`.codex-plugin/plugin.json`, `hooks/codex-hooks.json`, `.agents/plugins/marketplace.json`). Trust the hooks once with `/hooks`. There is no root `plugin.json` in the Agent Plugins format, because Codex CLI 0.165 then skips the plugin's hooks.
