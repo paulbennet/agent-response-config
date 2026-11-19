@@ -1,0 +1,20 @@
+{
+  "name": "response-config",
+  "version": "1.2.0",
+  "description": "Minimal, structured, level-controlled replies with numbered A/S/Q/D items you answer by ID. Skill and output style; the hooks edition is on GitHub.",
+  "author": {
+    "name": "Paul Bennet Joshua"
+  },
+  "homepage": "https://paulbennet.github.io/agent-response-config/",
+  "repository": "https://github.com/paulbennet/agent-response-config",
+  "license": "MIT",
+  "keywords": [
+    "concise",
+    "structured",
+    "readability",
+    "cefr",
+    "output-style"
+  ],
+  "icon": "./assets/icon.png",
+  "outputStyles": "./output-styles/"
+}

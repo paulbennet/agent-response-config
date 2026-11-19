@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "minimal": {
+    "on": true,
+    "level": "high",
+    "maxWords": null,
+    "preserve": ["code", "commands", "tables", "errors", "paths", "diffs"]
+  },
+  "structured": {
+    "on": true,
+    "sections": ["actions", "suggestions", "questions", "decisions"],
+    "showEmptySections": false,
+    "replyHint": true,
+    "statusEmoji": true
+  },
+  "language": {
+    "on": false,
+    "preset": null,
+    "cefr": "B2",
+    "readability": null,
+    "vocabulary": null,
+    "plainLanguage": false
+  },
+  "hooks": { "sessionStart": true, "eachPrompt": true, "ledger": true },
+  "overrides": { "inlineTags": true },
+  "claude": { "outputStyle": { "manage": false, "scope": "user", "activate": false } }
+}
