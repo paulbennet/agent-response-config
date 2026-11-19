@@ -16,7 +16,8 @@
     "evals": "node tools/evals.mjs",
     "validate:mod": "claude plugin validate mods/response-config-mod",
     "site": "node tools/site.mjs",
-    "package:codex": "node tools/codex-package.mjs"
+    "package:codex": "node tools/codex-package.mjs",
+    "build:directory": "node tools/directory-build.mjs"
   },
   "devDependencies": {
     "marked": "18.1.2"

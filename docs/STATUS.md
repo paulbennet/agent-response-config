@@ -11,6 +11,7 @@ What is verified, what is not, and where the build differs from [implementation-
 | `npm test` and e2e on Linux (with `XDG_CONFIG_HOME`), macOS and Windows | GitHub Actions, `.github/workflows/test.yml` (N3, N4) |
 | Plugin hooks in live `claude -p` sessions on macOS and Linux | Workflow `live`, `tools/live-ci.mjs` (N5) |
 | Claude plugin manifest, marketplace, hooks file | `claude plugin validate .` on Claude Code 2.1.310 |
+| Claude plugin directory edition (`directory` branch: skill and output style, no hooks or scripts) | `tests/directory.test.mjs`; workflow `directory` builds it on each `v*` tag |
 | Codex plugin: manifest, marketplace, hooks from a local and a GitHub install | [testing-plan.md](testing-plan.md) L10 to L12, Codex CLI 0.165 |
 | Plugin hooks and setup hooks in live Claude Code sessions (terminal, desktop, VS Code) | [testing-plan.md](testing-plan.md) section G |
 | Codex hooks: `hooks.json` shape, trust flow, session start, per-prompt hint, Stop | Section I, Codex CLI |
